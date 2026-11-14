@@ -3,8 +3,15 @@ import React from 'react';
 
 interface Props { parameter: string; time: string; north: number; south: number; east: number; west: number; }
 export default function HeatmapComponent({ parameter, time, north, south, east, west }: Props) {
-  // Construct URL for backend heatmap endpoint
-  const url = `/api/heatmap?parameter=${parameter}&time=${encodeURIComponent(time)}&north=${north}&south=${south}&east=${east}&west=${west}`;
+  const query = new URLSearchParams({
+    param: parameter,
+    time,
+    latN: String(north),
+    lonW: String(west),
+    latS: String(south),
+    lonE: String(east),
+  });
+  const url = `/api/heatmap?${query}`;
   return (
     <div>
       <h2>Spatial Heatmap</h2>

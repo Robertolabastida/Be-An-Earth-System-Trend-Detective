@@ -1,18 +1,26 @@
-import os
 import io
+import os
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import requests
 import numpy as np
 
-# Cargar variables de entorno desde backend/.env
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
+load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env")
 METEO_USER = os.getenv("METEOMATICS_USER")
 METEO_PWD = os.getenv("METEOMATICS_PASSWORD")
-if not METEO_USER or not METEO_PWD:
-    raise RuntimeError("Missing Meteomatics credentials in .env file")
+
+
+def get_meteomatics_auth():
+    if not METEO_USER or not METEO_PWD:
+        raise HTTPException(
+            status_code=503,
+            detail="Meteomatics credentials are not configured. Set METEOMATICS_USER and METEOMATICS_PASSWORD.",
+        )
+    return METEO_USER, METEO_PWD
 
 app = FastAPI()
 
@@ -25,7 +33,7 @@ app.add_middleware(
 )
 
 @app.get("/api/time-series")
-async def get_time_series(param: str, lat: float, lon: float, start: str, end: str):
+def get_time_series(param: str, lat: float, lon: float, start: str, end: str):
     """
     Recupera datos de Meteomatics en formato JSON para una serie de tiempo.
     Calcula pendiente y R^2 de una regresión lineal sobre los valores.
@@ -35,10 +43,10 @@ async def get_time_series(param: str, lat: float, lon: float, start: str, end: s
     url = f"https://api.meteomatics.com/{time_range}/{param}/{lat},{lon}/json"
 
     try:
-        res = requests.get(url, auth=(METEO_USER, METEO_PWD), timeout=10)
+        res = requests.get(url, auth=get_meteomatics_auth(), timeout=10)
         res.raise_for_status()
         json_data = res.json()
-    except Exception as e:
+    except (requests.RequestException, ValueError) as e:
         raise HTTPException(status_code=502, detail=f"Error calling Meteomatics API: {str(e)}")
 
     # Extraer fechas y valores
@@ -75,7 +83,7 @@ async def get_time_series(param: str, lat: float, lon: float, start: str, end: s
     }
 
 @app.get("/api/heatmap")
-async def get_heatmap(param: str, latN: float, lonW: float, latS: float, lonE: float, time: str):
+def get_heatmap(param: str, latN: float, lonW: float, latS: float, lonE: float, time: str):
     """
     Devuelve una imagen PNG (heatmap) de Meteomatics para el parámetro y región dada.
     """
@@ -85,9 +93,9 @@ async def get_heatmap(param: str, latN: float, lonW: float, latS: float, lonE: f
         f"{latN},{lonW}_{latS},{lonE}:600x400/png"
     )
     try:
-        res = requests.get(url, auth=(METEO_USER, METEO_PWD), timeout=10)
+        res = requests.get(url, auth=get_meteomatics_auth(), timeout=10)
         res.raise_for_status()
-    except Exception as e:
+    except requests.RequestException as e:
         raise HTTPException(status_code=502, detail=f"Error fetching heatmap: {str(e)}")
 
     return StreamingResponse(io.BytesIO(res.content), media_type="image/png")

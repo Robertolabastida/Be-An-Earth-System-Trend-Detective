@@ -33,14 +33,14 @@ python -m pip install --upgrade pip
 python -m pip install -r backend/requirements.txt
 ```
 
-Create `backend/.env` and add the credentials for your Meteomatics account:
+Create a root-level `.env` file (you can copy `.env.example`) and add the credentials for your Meteomatics account:
 
 ```dotenv
 METEOMATICS_USER=your_username
 METEOMATICS_PASSWORD=your_password
 ```
 
-The backend specifically loads `backend/.env` and will not start if either credential is missing. Keep this file private; do not commit or share your credentials.
+The backend loads `.env` from the repository root. It can start without credentials, but API requests return a clear configuration error until both values are set. Keep `.env` private; it is ignored by Git.
 
 ## 2. Start the backend
 
@@ -52,6 +52,12 @@ python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 Keep this terminal running. The API is available at <http://127.0.0.1:8000>; its interactive documentation is at <http://127.0.0.1:8000/docs>.
+
+Run the backend tests from the `backend/` directory:
+
+```bash
+python -m pytest app_test.py
+```
 
 ## 3. Install and start the frontend
 

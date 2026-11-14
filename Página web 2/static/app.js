@@ -2,7 +2,7 @@
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const HOME = Cesium.Cartesian3.fromDegrees(-100, 15, 20000000);
-let VARS = [], varId = "t2m", pick = null, marker = null, chart = null, last = null, explored = false;
+let VARS = [], varId = "t2m", sourceId = "power", pick = null, marker = null, chart = null, last = null, explored = true, requestId = 0;
 
 // ---------- Globe (no Cesium Ion: imagery from NASA GIBS, stars from the built-in skybox) ----------
 const viewer = new Cesium.Viewer("cesiumContainer", {
@@ -19,7 +19,7 @@ scene.globe.maximumScreenSpaceError = 1.5;
 scene.globe.nightFadeOutDistance = 5e7;
 viewer.clock.currentTime = Cesium.JulianDate.now();   // lighting follows the real current time
 viewer.clock.shouldAnimate = true;
-viewer.camera.setView({ destination: HOME });
+viewer.camera.setView({ destination: Cesium.Cartesian3.fromDegrees(-60, 20, 17000000) });
 viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
 
 viewer.imageryLayers.addImageryProvider(new Cesium.WebMapTileServiceImageryProvider({
@@ -40,7 +40,6 @@ function enter() {
   $("panel").hidden = false; $("panel").classList.add("show"); $("map-tools").hidden = false;
   viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(-100, 20, 14000000), duration: 2 });
 }
-$("explore").onclick = enter;
 $("zin").onclick = () => viewer.camera.zoomIn(viewer.camera.positionCartographic.height * 0.4);
 $("zout").onclick = () => viewer.camera.zoomOut(viewer.camera.positionCartographic.height * 0.6);
 $("reset").onclick = () => viewer.camera.flyTo({ destination: HOME, duration: 1.5 });
@@ -61,7 +60,7 @@ function setPick(lat, lon, fly) {
     point: { pixelSize: 11, color: Cesium.Color.WHITE, outlineColor: Cesium.Color.fromCssColorString("#4fd1ff"), outlineWidth: 3 },
   });
   if (fly) viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(lon, lat, 3000000), duration: 2 });
-  run();
+  $("out").textContent = "Location selected. Click Analyze to retrieve observations.";
 }
 
 // ---------- Place search (OpenStreetMap Nominatim) ----------
@@ -77,12 +76,41 @@ $("search").onsubmit = async (e) => {
 
 // ---------- Variables ----------
 const cur = () => VARS.find((v) => v.id === varId);
-fetch("/api/variables").then((r) => r.json()).then((l) => { VARS = l; drawVars(); });
+fetch("/api/variables").then((r) => {
+  if (!r.ok) throw new Error("Failed to retrieve variable catalog.");
+  return r.json();
+}).then((list) => { VARS = list; drawSources(); drawVars(); })
+  .catch(() => { $("out").textContent = "Could not load variables. Check the Python server."; });
+
+function drawSources() {
+  const labels = { power: "NASA POWER", oisst: "NOAA OISST", appeears: "NASA AppEEARS — Aqua MODIS" };
+  const unique = [...new Set(VARS.map((v) => v.provider))];
+  $("source").innerHTML = unique.map((p) => '<option value="' + esc(p) + '">' + esc(labels[p] || p) + '</option>').join("");
+  $("source").value = sourceId;
+  $("source").onchange = () => {
+    sourceId = $("source").value;
+    const next = VARS.find((v) => v.provider === sourceId);
+    if (next) {
+      varId = next.id;
+      if (sourceId === "appeears" && Number($("y0").value) < 2002) $("y0").value = "2003";
+    }
+    drawVars();
+    $("out").textContent = "Select a variable and a place, then click Analyze.";
+  };
+}
 function drawVars() {
-  $("vars").innerHTML = VARS.map((v) => `
-    <button class="var" role="radio" aria-checked="${v.id === varId}" data-id="${v.id}" title="${esc(v.explain)} ${esc(v.meaning)}">
-      <b>${esc(v.name)}</b><small>${esc(v.unit)} · since ${v.start} · ${esc(v.source)}</small></button>`).join("");
-  $("vars").querySelectorAll(".var").forEach((b) => (b.onclick = () => { varId = b.dataset.id; drawVars(); if (pick) run(); }));
+  const available = VARS.filter((v) => v.provider === sourceId);
+  if (!available.some((v) => v.id === varId) && available.length) varId = available[0].id;
+  $("vars").innerHTML = available.map((v) =>
+    '<button class="var" role="radio" aria-checked="' + (v.id === varId) +
+    '" data-id="' + esc(v.id) + '" title="' + esc(v.explain + " " + v.meaning) +
+    '"><b>' + esc(v.name) + '</b><small>' + esc(v.unit) + ' · since ' + v.start +
+    ' · ' + esc(v.source) + '</small></button>').join("");
+  $("vars").querySelectorAll(".var").forEach((b) => b.onclick = () => {
+    varId = b.dataset.id;
+    drawVars();
+    $("out").textContent = "Click Analyze to request these observations.";
+  });
 }
 $("run").onclick = () => pick ? run() : ($("out").innerHTML = `<p class="note">Select a location first: click the globe or search for a place.</p>`);
 
@@ -90,26 +118,55 @@ $("run").onclick = () => pick ? run() : ($("out").innerHTML = `<p class="note">S
 const DEMOS = [
   { t: "Is the Arctic warming?", why: "The Arctic is a sensitive region for climate change.", v: "t2m", lat: 78, lon: 15, a: 1985, b: 2026 },
   { t: "Ocean temperature in the eastern tropical Pacific", why: "Sea temperature shapes El Niño and marine ecosystems.", v: "sst", lat: 0, lon: -120, a: 1985, b: 2026 },
-  { t: "Rainfall over the Amazon", why: "Amazon rainfall supports one of Earth's largest forests.", v: "precip", lat: -3.1, lon: -60, a: 1985, b: 2026 },
+  { t: "Rainfall over the Amazon", why: "Amazon rainfall supports one of Earth's largest forests.", v: "precip", lat: -3.1, lon: -60, a: 1985, b: 2025 },
+  { t: "Vegetation near Ensenada (MODIS)", why: "Examine satellite-measured greenness over two decades.", v: "modis_ndvi", lat: 31.87, lon: -116.6, a: 2003, b: 2025 },
 ];
 $("demo-list").innerHTML = DEMOS.map((d, i) => `<button class="demo" data-i="${i}">${esc(d.t)}<small>${esc(d.why)}</small></button>`).join("");
 $("demo-list").querySelectorAll(".demo").forEach((b) => (b.onclick = () => {
   const d = DEMOS[+b.dataset.i];
-  varId = d.v; $("y0").value = d.a; $("y1").value = d.b; drawVars(); setPick(d.lat, d.lon, true);
+  varId = d.v; sourceId = VARS.find((v) => v.id === d.v)?.provider || "power";
+  $("source").value = sourceId; $("y0").value = d.a; $("y1").value = d.b;
+  drawVars(); setPick(d.lat, d.lon, true); run();
 }));
 
 // ---------- Analysis ----------
 async function run() {
   const v = cur(); if (!v || !pick) return;
-  $("out").innerHTML = `<p class="note">Retrieving ${esc(v.name)} observations for ${pick.lat.toFixed(2)}°, ${pick.lon.toFixed(2)}° …</p>`;
-  const qs = new URLSearchParams({ var: v.id, lat: pick.lat, lon: pick.lon, start: $("y0").value, end: $("y1").value });
+  const id = ++requestId;
+  $("out").textContent = "Retrieving " + v.name + " observations...";
   try {
-    const r = await fetch("/api/series?" + qs);
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.error || "Request failed.");
-    last = d; render();
+    let data;
+    if (v.provider === "appeears") {
+      const started = await fetch("/api/modis/tasks", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ var: v.id, lat: pick.lat, lon: pick.lon,
+                               start: $("y0").value, end: $("y1").value }),
+      });
+      data = await started.json();
+      if (!started.ok) throw new Error(data.error || "NASA rejected the request.");
+      for (let attempt = 0; attempt < 120; attempt++) {
+        if (id !== requestId) return;
+        $("out").textContent = "NASA is processing task " + data.task_id + " · " + data.status + " (about to check again).";
+        await new Promise((resolve) => setTimeout(resolve, 6000));
+        const response = await fetch("/api/modis/tasks/" + encodeURIComponent(data.task_id));
+        const next = await response.json();
+        if (!response.ok) throw new Error(next.error || "Could not retrieve MODIS results.");
+        data = next;
+        if (data.status === "done") break;
+      }
+      if (data.status !== "done") throw new Error("NASA is still processing this task. Try again later.");
+    } else {
+      const qs = new URLSearchParams({ var: v.id, lat: pick.lat, lon: pick.lon,
+        start: $("y0").value, end: $("y1").value });
+      const response = await fetch("/api/series?" + qs);
+      data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Request failed.");
+    }
+    if (id !== requestId) return;
+    last = data; render();
   } catch (e) {
-    $("out").innerHTML = `<p class="err">${esc(e.message)}</p><p class="note">No substitute data are shown. Try another location or period.</p>`;
+    if (id === requestId) $("out").innerHTML =
+      '<p class="err">' + esc(e.message) + '</p><p class="note">No substitute or simulated data are shown.</p>';
   }
 }
 

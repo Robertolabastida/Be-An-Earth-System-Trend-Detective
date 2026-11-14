@@ -1,0 +1,28 @@
+# Local credentials and downloaded datasets
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+data/
+downloads/
+*.tif
+*.tiff
+*.nc
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Frontend
+node_modules/
+dist/
+
+# OS / editor
+.DS_Store
+.vscode/

@@ -1,4 +1,6 @@
-flask>=3.0
-requests>=2.31
+flask>=3.0,<4
+requests>=2.31,<3
 numpy>=1.26
 scipy>=1.11
+python-dotenv>=1.0,<2
+pytest>=8,<10

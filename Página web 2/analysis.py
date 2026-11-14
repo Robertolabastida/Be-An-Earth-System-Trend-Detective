@@ -41,12 +41,21 @@ def _ols(t, y):
     b = ((t - t.mean()) * (y - y.mean())).sum() / sxx
     a = y.mean() - b * t.mean()
     res = y - (a + b * t)
-    r1 = float(np.clip(np.corrcoef(res[:-1], res[1:])[0, 1], 0, 0.99))
+    ss_tot = ((y - y.mean()) ** 2).sum()
+    if ss_tot < 1e-20:
+        return {"slope": 0.0, "intercept": float(y.mean()), "ci": [0.0, 0.0],
+                "p": 1.0, "r2": 1.0, "lag1": 0.0, "n_eff": float(n)}
+    if (res ** 2).sum() < 1e-20:
+        return {"slope": float(b), "intercept": float(a), "ci": [float(b), float(b)],
+                "p": 0.0 if b != 0 else 1.0, "r2": 1.0, "lag1": 0.0, "n_eff": float(n)}
+    if np.std(res[:-1]) < 1e-12 or np.std(res[1:]) < 1e-12:
+        r1 = 0.0
+    else:
+        r1 = float(np.clip(np.corrcoef(res[:-1], res[1:])[0, 1], 0, 0.99))
     neff = max(n * (1 - r1) / (1 + r1), 3.1)  # effective sample size for AR(1) residuals
     se = np.sqrt((res ** 2).sum() / (n - 2) / sxx) * np.sqrt(n / neff)
     df = neff - 2
     tc = stats.t.ppf(0.975, df)
-    ss_tot = ((y - y.mean()) ** 2).sum()
     return {"slope": float(b), "intercept": float(a), "ci": [float(b - tc * se), float(b + tc * se)],
             "p": float(2 * stats.t.sf(abs(b / se), df)), "r2": float(1 - (res ** 2).sum() / ss_tot),
             "lag1": r1, "n_eff": float(neff)}

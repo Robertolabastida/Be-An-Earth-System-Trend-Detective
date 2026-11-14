@@ -52,3 +52,5 @@ dt{color:var(--muted);cursor:help}dd{margin:0;text-align:right;font-weight:600}
   #intro{bottom:18vh}
 }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.brand{font-family:Fraunces,serif;font-weight:600;font-size:1.5rem;line-height:1.1;margin:0 0 6px}

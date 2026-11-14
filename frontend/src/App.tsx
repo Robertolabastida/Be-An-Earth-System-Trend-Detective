@@ -50,9 +50,11 @@ const App: React.FC = () => {
   // Estado para datos recibidos y para imagen de heatmap
   const [timeSeriesData, setTimeSeriesData] = useState<{ dates: string[]; values: number[]; slope: number | null; intercept: number | null; r2: number | null;} | null>(null);
   const [imageUrl, setImageUrl] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   // Función para solicitar datos al backend
   const handleFetch = async () => {
+    setErrorMessage("");
     if (analysisType === "Chart") {
       // Datos de series de tiempo
       try {
@@ -69,7 +71,12 @@ const App: React.FC = () => {
         setImageUrl("");
       } catch (error) {
         console.error(error);
-        alert("Error fetching time series data.");
+        const detail = axios.isAxiosError<{ detail?: string }>(error)
+          ? error.response?.data?.detail || error.message
+          : error instanceof Error
+            ? error.message
+            : String(error);
+        setErrorMessage(`No se pudieron cargar los datos: ${detail}`);
       }
     } else {
       // Mapa de calor
@@ -114,6 +121,7 @@ const App: React.FC = () => {
         </label>
       </div>
       <button onClick={handleFetch}>Get Data</button>
+      {errorMessage && <p role="alert">{errorMessage}</p>}
 
       <hr />
 

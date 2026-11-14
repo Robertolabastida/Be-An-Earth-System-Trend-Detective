@@ -51,8 +51,19 @@ def get_time_series(param: str, lat: float, lon: float, start: str, end: str):
 
     # Extraer fechas y valores
     try:
-        param_key = next(iter(json_data))
-        coords = json_data[param_key][0]["coordinates"]
+        if not isinstance(json_data, dict):
+            raise ValueError("Expected a JSON object")
+
+        if "data" in json_data:
+            data_entries = json_data["data"]
+            if not isinstance(data_entries, list) or not data_entries:
+                raise ValueError("No data entries in response")
+            data_entry = data_entries[0]
+        else:
+            # Compatibilidad con respuestas que usan el nombre del parámetro como clave.
+            data_entry = next(iter(json_data.values()))[0]
+
+        coords = data_entry["coordinates"]
         if not coords:
             raise ValueError("No coordinates in response")
         date_entries = coords[0]["dates"]

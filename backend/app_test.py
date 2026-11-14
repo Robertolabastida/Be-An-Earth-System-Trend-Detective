@@ -53,6 +53,47 @@ def test_time_series_endpoint_returns_values_and_trend(monkeypatch):
     assert main.requests.get.call_args.kwargs["auth"] == ("test-user", "test-password")
 
 
+def test_time_series_endpoint_parses_meteomatics_data_with_metadata(monkeypatch):
+    monkeypatch.setattr(main, "METEO_USER", "test-user")
+    monkeypatch.setattr(main, "METEO_PWD", "test-password")
+    response_from_provider = Mock()
+    response_from_provider.json.return_value = {
+        "version": "3.0",
+        "status": "OK",
+        "data": [
+            {
+                "parameter": "t_2m:C",
+                "coordinates": [
+                    {
+                        "dates": [
+                            {"date": "2026-01-01T00:00:00Z", "value": 1},
+                            {"date": "2026-01-02T00:00:00Z", "value": 3},
+                        ]
+                    }
+                ],
+            }
+        ],
+    }
+    monkeypatch.setattr(main.requests, "get", Mock(return_value=response_from_provider))
+
+    response = client.get(
+        "/api/time-series",
+        params={
+            "param": "t_2m:C",
+            "lat": 51.5,
+            "lon": 0.0,
+            "start": "2026-01-01T00:00:00Z",
+            "end": "2026-01-02T00:00:00Z",
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["dates"] == ["2026-01-01T00:00:00Z", "2026-01-02T00:00:00Z"]
+    assert data["values"] == [1, 3]
+    assert data["slope"] == pytest.approx(2)
+
+
 def test_time_series_requires_credentials(monkeypatch):
     monkeypatch.setattr(main, "METEO_USER", None)
     monkeypatch.setattr(main, "METEO_PWD", None)

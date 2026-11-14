@@ -14,7 +14,7 @@ st.write("Explorador inteligente de tendencias del sistema terrestre.")
 
 region = st.selectbox(
     "Selecciona una región:",
-    ["Baja California", "Amazonía", "Sahel"]
+    ["Baja California", "Amazoníha", "Sahel"]
 )
 
 st.info(f"Región seleccionada: {region}")

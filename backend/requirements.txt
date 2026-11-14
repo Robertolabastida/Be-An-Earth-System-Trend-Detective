@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+requests
+python-dotenv      # loads .env automatically
+numpy
+pytest            # for tests

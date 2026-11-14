@@ -1,132 +1,160 @@
-// frontend/src/App.tsx
 import React, { useState } from 'react';
-import './App.css';
-import ChartComponent from './components/ChartComponent';
-import HeatmapComponent from './components/HeatmapComponent';
-import { fetchTimeSeries, fetchTrend } from './api';
+import axios from 'axios';
+import { Line } from 'react-chartjs-2';
+import 'chart.js/auto';  // Importa adaptadores para Chart.js
 
-function App() {
-  // State hooks for form inputs
-  const [variable, setVariable] = useState('t_2m:C');
-  const [lat, setLat] = useState(51.5);
-  const [lon, setLon] = useState(0.0);
-  const [start, setStart] = useState('2026-01-01T00:00:00Z');
-  const [end, setEnd] = useState('2026-12-31T23:00:00Z');
-  const [step, setStep] = useState('P1D');
-  const [analysis, setAnalysis] = useState('time_series');
-  const [region, setRegion] = useState<'point' | 'bbox'>('point');
-  const [bbox, setBbox] = useState({ north: 55.0, south: 50.0, east: 5.0, west: -5.0 });
+// Definición de opciones disponibles
+const PARAMETERS = [
+  { label: "Temperature (2m)", value: "t_2m:C" },
+  { label: "Precipitation (1h)", value: "precip_1h:mm" },
+  { label: "Wind Speed (10m)", value: "wind_speed_10m:ms" }
+];
+const ANALYSIS_TYPES = ["Chart", "Heatmap"];
+const REGIONS = {
+  "Ensenada, MX": {
+    lat: 31.87, lon: -116.60,
+    latN: 33, lonW: -118, latS: 30, lonE: -114
+  },
+  "Mexico": {
+    lat: 23.0, lon: -102.0,
+    latN: 32, lonW: -118, latS: 14, lonE: -86
+  },
+  "North America": {
+    lat: 39.0, lon: -95.0,
+    latN: 72, lonW: -170, latS: 8, lonE: -50
+  },
+  "Europe": {
+    lat: 51.5, lon: 10.0,
+    latN: 70, lonW: -25, latS: 30, lonE: 45
+  },
+  "World": {
+    lat: 0, lon: 0,
+    latN: 90, lonW: -180, latS: -90, lonE: 180
+  }
+};
+const REGION_NAMES = Object.keys(REGIONS) as Array<keyof typeof REGIONS>;
 
-  // Data results
-  const [seriesData, setSeriesData] = useState<any[]>([]);
-  const [trendData, setTrendData] = useState<any>(null);
-  const [error, setError] = useState<string>('');
+const App: React.FC = () => {
+  const today = new Date().toISOString().split('T')[0];
+  const prevMonth = new Date();
+  prevMonth.setDate(prevMonth.getDate() - 30);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    try {
-      if (analysis === 'time_series') {
-        const res = await fetchTimeSeries(variable, lat, lon, start, end, step);
-        setSeriesData(res.series);
-        setTrendData(null);
-      } else if (analysis === 'linear_trend') {
-        const res = await fetchTrend(variable, lat, lon, start, end, step);
-        setSeriesData(res.series);
-        setTrendData(res);
+  // Estados para parámetros del formulario
+  const [param, setParam] = useState(PARAMETERS[0].value);
+  const [analysisType, setAnalysisType] = useState(ANALYSIS_TYPES[0]);
+  const [startDate, setStartDate] = useState(prevMonth.toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState(today);
+  const [region, setRegion] = useState<keyof typeof REGIONS>("Ensenada, MX");
+  const selectedRegion = REGIONS[region];
+
+  // Estado para datos recibidos y para imagen de heatmap
+  const [timeSeriesData, setTimeSeriesData] = useState<{ dates: string[]; values: number[]; slope: number | null; intercept: number | null; r2: number | null;} | null>(null);
+  const [imageUrl, setImageUrl] = useState("");
+
+  // Función para solicitar datos al backend
+  const handleFetch = async () => {
+    if (analysisType === "Chart") {
+      // Datos de series de tiempo
+      try {
+        const res = await axios.get('/api/time-series', {
+          params: {
+            param: param,
+            lat: selectedRegion.lat,
+            lon: selectedRegion.lon,
+            start: `${startDate}T00:00:00Z`,
+            end: `${endDate}T00:00:00Z`
+          }
+        });
+        setTimeSeriesData(res.data);
+        setImageUrl("");
+      } catch (error) {
+        console.error(error);
+        alert("Error fetching time series data.");
       }
-      // (Additional analysis types like anomaly/seasonal could be handled similarly.)
-    } catch (err: any) {
-      setError(err.message);
+    } else {
+      // Mapa de calor
+      setTimeSeriesData(null);
+      const url = `/api/heatmap?param=${encodeURIComponent(param)}&time=${encodeURIComponent(endDate + "T00:00:00Z")}` +
+                  `&latN=${selectedRegion.latN}&lonW=${selectedRegion.lonW}&latS=${selectedRegion.latS}&lonE=${selectedRegion.lonE}` +
+                  `&_=${Date.now()}`;  // parametro anti-cache
+      setImageUrl(url);
     }
   };
 
   return (
-    <div className="app">
-      <h1>EarthTrend AI – Climate Trend Explorer</h1>
-      <form onSubmit={handleSubmit} className="control-panel">
-        {/* Variable selection */}
-        <label>Variable:
-          <select value={variable} onChange={e => setVariable(e.target.value)}>
-            <option value="t_2m:C">Air Temp (2m, °C)</option>
-            <option value="precip_1h:mm">Precipitation (hourly, mm)</option>
-            <option value="relative_humidity_2m:p">Humidity (2m, %)</option>
-            <option value="wind_speed_10m:ms">Wind Speed (10m, m/s)</option>
-            {/* Add more parameter options as needed */}
+    <div className="container">
+      <h1>EarthTrend AI - Data Explorer</h1>
+      <div className="form-group">
+        <label>Variable:&nbsp;
+          <select value={param} onChange={e => setParam(e.target.value)}>
+            {PARAMETERS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
           </select>
         </label>
-        {/* Region: point vs bounding box */}
-        <label>Region Type:
-          <select value={region} onChange={e => setRegion(e.target.value as any)}>
-            <option value="point">Point (lat/lon)</option>
-            <option value="bbox">Bounding Box (for map)</option>
+      </div>
+      <div className="form-group">
+        <label>Analysis Type:&nbsp;
+          <select value={analysisType} onChange={e => setAnalysisType(e.target.value)}>
+            {ANALYSIS_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
           </select>
         </label>
-        {/* If point, show lat/lon inputs */}
-        {region === 'point' && (
-          <div className="coords">
-            <label>Latitude: <input type="number" value={lat} onChange={e => setLat(Number(e.target.value))} /></label>
-            <label>Longitude: <input type="number" value={lon} onChange={e => setLon(Number(e.target.value))} /></label>
-          </div>
-        )}
-        {/* If bbox, show north/south/east/west inputs */}
-        {region === 'bbox' && (
-          <div className="bbox">
-            <label>North: <input type="number" value={bbox.north} onChange={e => setBbox({ ...bbox, north: Number(e.target.value) })} /></label>
-            <label>South: <input type="number" value={bbox.south} onChange={e => setBbox({ ...bbox, south: Number(e.target.value) })} /></label>
-            <label>East: <input type="number" value={bbox.east} onChange={e => setBbox({ ...bbox, east: Number(e.target.value) })} /></label>
-            <label>West: <input type="number" value={bbox.west} onChange={e => setBbox({ ...bbox, west: Number(e.target.value) })} /></label>
-          </div>
-        )}
-        {/* Time range */}
-        <label>Start (UTC):
-          <input type="datetime-local" value={start.slice(0,-1)} onChange={e => setStart(new Date(e.target.value).toISOString())} />
+      </div>
+      <div className="form-group">
+        <label>Start Date:&nbsp;
+          <input type="date" value={startDate} max={endDate} onChange={e => setStartDate(e.target.value)} />
         </label>
-        <label>End (UTC):
-          <input type="datetime-local" value={end.slice(0,-1)} onChange={e => setEnd(new Date(e.target.value).toISOString())} />
+        <label style={{ marginLeft: "1rem" }}>End Date:&nbsp;
+          <input type="date" value={endDate} min={startDate} onChange={e => setEndDate(e.target.value)} />
         </label>
-        <label>Resolution:
-          <select value={step} onChange={e => setStep(e.target.value)}>
-            <option value="PT1H">Hourly</option>
-            <option value="P1D">Daily</option>
-            <option value="P1M">Monthly</option>
+      </div>
+      <div className="form-group">
+        <label>Region:&nbsp;
+          <select value={region} onChange={e => setRegion(e.target.value as keyof typeof REGIONS)}>
+            {REGION_NAMES.map(r => <option key={r} value={r}>{r}</option>)}
           </select>
         </label>
-        {/* Analysis type */}
-        <label>Analysis:
-          <select value={analysis} onChange={e => setAnalysis(e.target.value)}>
-            <option value="time_series">Time Series</option>
-            <option value="linear_trend">Linear Trend</option>
-            {/* Additional types could be added: anomaly, seasonal, spatial */}
-          </select>
-        </label>
-        <button type="submit">Run Analysis</button>
-      </form>
+      </div>
+      <button onClick={handleFetch}>Get Data</button>
 
-      {error && <div className="error">Error: {error}</div>}
+      <hr />
 
-      {/* Results */}
-      {seriesData.length > 0 && (
-        <ChartComponent data={seriesData} label={variable} title={analysis === 'linear_trend' ? "Trend Analysis" : "Time Series"} />
-      )}
-      {trendData && (
-        <div className="trend-info">
-          <p>Slope: {trendData.slope.toFixed(3)} units/day (R² = {trendData.r_squared.toFixed(2)})</p>
+      {timeSeriesData && analysisType === "Chart" && (
+        <div>
+          <h2>Time Series for {param}</h2>
+          <Line
+            data={{
+              labels: timeSeriesData.dates,
+              datasets: [
+                {
+                  label: `${param} over time`,
+                  data: timeSeriesData.values,
+                  borderColor: 'rgba(53, 162, 235, 0.8)',
+                  backgroundColor: 'rgba(53, 162, 235, 0.4)',
+                  fill: false,
+                }
+              ]
+            }}
+            options={{
+              scales: {
+                x: { display: true, title: { display: true, text: 'Date' } },
+                y: { display: true, title: { display: true, text: 'Value' } }
+              }
+            }}
+          />
+          <p>
+            Slope: {timeSeriesData.slope !== null ? timeSeriesData.slope.toFixed(3) : 'N/A'}<br />
+            R²: {timeSeriesData.r2 !== null ? timeSeriesData.r2.toFixed(3) : 'N/A'}
+          </p>
         </div>
       )}
-      {/* For spatial map output (if region=bbox and analysis type = "map"), show image */}
-      {region === 'bbox' && analysis === 'time_series' && (
-        <HeatmapComponent
-          parameter={variable}
-          time={start}
-          north={bbox.north}
-          south={bbox.south}
-          east={bbox.east}
-          west={bbox.west}
-        />
+
+      {analysisType === "Heatmap" && imageUrl && (
+        <div>
+          <h2>Heatmap for {param}</h2>
+          <img src={imageUrl} alt="Heatmap" style={{ maxWidth: '100%', border: '1px solid #ccc' }} />
+        </div>
       )}
     </div>
   );
-}
+};
 
 export default App;

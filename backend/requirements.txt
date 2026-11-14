@@ -4,3 +4,4 @@ requests
 python-dotenv      # loads .env automatically
 numpy
 pytest            # for tests
+httpx             # required by FastAPI TestClient

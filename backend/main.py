@@ -1,134 +1,93 @@
-# backend/main.py
-import os, datetime
-from typing import List
-from fastapi import FastAPI, Query, HTTPException
+import os
+import io
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
 import requests
-from functools import lru_cache
+import numpy as np
 
-# Load credentials from environment
-USER = os.environ.get("METEOMATICS_USER")
-PASSWORD = os.environ.get("METEOMATICS_PASSWORD")
-BASE_URL = os.environ.get("METEOMATICS_BASE_URL", "https://api.meteomatics.com")
+# Cargar variables de entorno desde backend/.env
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
+METEO_USER = os.getenv("METEOMATICS_USER")
+METEO_PWD = os.getenv("METEOMATICS_PASSWORD")
+if not METEO_USER or not METEO_PWD:
+    raise RuntimeError("Missing Meteomatics credentials in .env file")
 
-if not USER or not PASSWORD:
-    raise RuntimeError("Meteomatics credentials not set in environment")
+app = FastAPI()
 
-app = FastAPI(title="EarthTrend AI API")
-
-# Enable CORS for dev (front-end on different port)
+# Habilitar CORS (apertura básica para desarrollo)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # adjust in production
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=["*"],
+    allow_methods=["GET"],
+    allow_headers=["*"]
 )
 
-def build_time_range(start: str, end: str, step: str) -> str:
+@app.get("/api/time-series")
+async def get_time_series(param: str, lat: float, lon: float, start: str, end: str):
     """
-    Construct the Meteomatics time range string. e.g. "2026-01-01T00:00:00Z--2026-01-10T00:00:00Z:P1D"
+    Recupera datos de Meteomatics en formato JSON para una serie de tiempo.
+    Calcula pendiente y R^2 de una regresión lineal sobre los valores.
     """
-    return f"{start}--{end}:{step}"
+    # Formato del rango de tiempo (por horas diarias)
+    time_range = f"{start}--{end}:PT24H"
+    url = f"https://api.meteomatics.com/{time_range}/{param}/{lat},{lon}/json"
 
-@lru_cache(maxsize=128)
-def query_meteomatics(range_str: str, parameters: str, location: str, fmt: str) -> dict:
-    """
-    Perform a GET request to Meteomatics API and return parsed JSON.
-    Results are cached for identical queries.
-    """
-    url = f"{BASE_URL}/{range_str}/{parameters}/{location}/{fmt}"
-    res = requests.get(url, auth=(USER, PASSWORD), timeout=10)
-    if res.status_code != 200:
-        raise HTTPException(status_code=res.status_code, detail=res.text)
-    return res.json()
-
-@app.get("/api/time_series")
-def get_time_series(
-    parameter: str = Query(..., description="Parameter code (e.g. t_2m:C)"),
-    lat: float = Query(..., description="Latitude of point"),
-    lon: float = Query(..., description="Longitude of point"),
-    start: str = Query(..., description="Start datetime (ISO 8601, e.g. 2026-01-01T00:00:00Z)"),
-    end: str = Query(..., description="End datetime (ISO 8601)"),
-    step: str = Query("PT1H", description="Time step (ISO 8601 duration, e.g. PT1H or P1D)"),
-):
-    """
-    Returns JSON time series for a given variable at one coordinate.
-    """
-    range_str = build_time_range(start, end, step)
-    loc = f"{lat},{lon}"
     try:
-        data = query_meteomatics(range_str, parameter, loc, "json")
-    except HTTPException as e:
-        raise
-    # Transform Meteomatics output to simple {date, value} list
-    times = []
-    for entry in data["data"]:
-        if entry["coordinates"]:
-            for point in entry["coordinates"]:
-                for dt_val in point["dates"]:
-                    times.append({"date": dt_val["date"], "value": dt_val["value"]})
-    # Sort by date
-    times.sort(key=lambda x: x["date"])
-    return {"parameter": parameter, "location": {"lat": lat, "lon": lon}, "series": times}
+        res = requests.get(url, auth=(METEO_USER, METEO_PWD), timeout=10)
+        res.raise_for_status()
+        json_data = res.json()
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Error calling Meteomatics API: {str(e)}")
 
-@app.get("/api/linear_trend")
-def get_linear_trend(
-    parameter: str = Query(...),
-    lat: float = Query(...),
-    lon: float = Query(...),
-    start: str = Query(...),
-    end: str = Query(...),
-    step: str = Query("P1M"),
-):
-    """
-    Returns the time series and linear trend (slope) for the specified range.
-    """
-    ts = get_time_series(parameter, lat, lon, start, end, step)
-    series = ts["series"]
-    if not series:
-        raise HTTPException(status_code=400, detail="No data returned")
-    # Compute linear regression (using simple least squares)
-    import numpy as np
-    dates = [datetime.datetime.fromisoformat(pt["date"][:-1]) for pt in series]
-    # Convert to numeric time (days since start)
-    base = dates[0]
-    xs = np.array([(dt - base).total_seconds() / 86400.0 for dt in dates])
-    ys = np.array([pt["value"] for pt in series])
-    A = np.vstack([xs, np.ones(len(xs))]).T
-    m, c = np.linalg.lstsq(A, ys, rcond=None)[0]  # slope (per day), intercept
-    # Calculate R-squared for quality measure
-    yfit = m * xs + c
-    ss_res = np.sum((ys - yfit) ** 2)
-    ss_tot = np.sum((ys - np.mean(ys)) ** 2)
-    r2 = 1 - ss_res/ss_tot if ss_tot != 0 else 1.0
+    # Extraer fechas y valores
+    try:
+        param_key = next(iter(json_data))
+        coords = json_data[param_key][0]["coordinates"]
+        if not coords:
+            raise ValueError("No coordinates in response")
+        date_entries = coords[0]["dates"]
+        dates = [entry["date"] for entry in date_entries]
+        values = [entry["value"] for entry in date_entries]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected response format: {str(e)}")
+
+    # Calcular regresión lineal (pendiente y R^2)
+    slope = intercept = r2 = None
+    if len(values) > 1:
+        x = np.arange(len(values))
+        y = np.array(values, dtype=float)
+        # Ajuste lineal
+        slope, intercept = np.polyfit(x, y, 1)
+        # Calcular R^2
+        y_pred = slope * x + intercept
+        ss_res = np.sum((y - y_pred) ** 2)
+        ss_tot = np.sum((y - np.mean(y)) ** 2)
+        r2 = 1 - ss_res/ss_tot if ss_tot != 0 else None
+
     return {
-        "parameter": parameter,
-        "slope": m,
-        "intercept": c,
-        "r_squared": r2,
-        "series": series
+        "dates": dates,
+        "values": values,
+        "slope": float(slope) if slope is not None else None,
+        "intercept": float(intercept) if intercept is not None else None,
+        "r2": float(r2) if r2 is not None else None
     }
 
 @app.get("/api/heatmap")
-def get_heatmap(
-    parameter: str = Query(..., description="Parameter code"),
-    north: float = Query(..., description="Northern latitude of bounding box"),
-    south: float = Query(..., description="Southern latitude"),
-    east: float = Query(..., description="Eastern longitude"),
-    west: float = Query(..., description="Western longitude"),
-    time: str = Query(..., description="Datetime (ISO 8601) for the map"),
-):
+async def get_heatmap(param: str, latN: float, lonW: float, latS: float, lonE: float, time: str):
     """
-    Returns a PNG heatmap image for the given parameter and bounding box at one time.
+    Devuelve una imagen PNG (heatmap) de Meteomatics para el parámetro y región dada.
     """
-    # Build Meteomatics grid query: lat_south,lon_west_lat_north,lon_east with resolution (auto)
-    loc = f"{south},{west}_{north},{east}:0.25,0.25"
-    range_str = time
-    # Use format=png for heatmap
-    url = f"{BASE_URL}/{range_str}/{parameter}/{loc}/png"
-    res = requests.get(url, auth=(USER, PASSWORD), timeout=10)
-    if res.status_code != 200:
-        raise HTTPException(status_code=res.status_code, detail=res.text)
-    # Stream back the image bytes
-    from fastapi.responses import StreamingResponse
-    return StreamingResponse(res.iter_content(chunk_size=1024), media_type="image/png")
+    # Construir URL para Meteomatics (ancho x alto fijos 600x400)
+    url = (
+        f"https://api.meteomatics.com/{time}/{param}/"
+        f"{latN},{lonW}_{latS},{lonE}:600x400/png"
+    )
+    try:
+        res = requests.get(url, auth=(METEO_USER, METEO_PWD), timeout=10)
+        res.raise_for_status()
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Error fetching heatmap: {str(e)}")
+
+    return StreamingResponse(io.BytesIO(res.content), media_type="image/png")

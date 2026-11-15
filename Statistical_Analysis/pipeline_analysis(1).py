@@ -170,10 +170,11 @@ def analyze_climate_trends(min_lat, max_lat, min_lon, max_lon, start_year, end_y
             }
         })
         
-    output_txt_path = os.path.join(figures_dir, "resultados_analisis.txt")
-    with open(output_txt_path, 'w', encoding='utf-8') as f:
-        json.dump(final_report, f, indent=2, ensure_ascii=False)
-        
+ # TRIAL CODE ONLY FOR VERIFYING DATA LOCALLY ------------------------------------------------------------------       
+    #output_txt_path = os.path.join(figures_dir, "resultados_analisis.txt")
+    #with open(output_txt_path, 'w', encoding='utf-8') as f:
+    #    json.dump(final_report, f, indent=2, ensure_ascii=False)
+ # ------------------------------------------------------------------------------------------------------------------------------------------
     return final_report
 
 if __name__ == "__main__":

@@ -81,7 +81,7 @@ dt{color:var(--muted);cursor:help}dd{margin:0;text-align:right;font-weight:600}
 
 #status{position:fixed;right:64px;top:22px;z-index:3;font-size:.78rem;color:var(--muted);background:var(--panel);border:1px solid var(--edge);border-radius:99px;padding:4px 12px;display:none}
 
-/* Data sources window (GPM / MERRA-2 / GLDAS plots) */
+/* Climate Atlas window (charts for the selected place) */
 #data-btn{display:grid;place-items:center}
 #data-btn svg{width:20px;height:20px;display:block}
 #data{position:fixed;left:440px;right:68px;top:14px;bottom:34px;z-index:3;overflow-y:auto;padding:16px}
@@ -161,14 +161,14 @@ dt{color:var(--muted);cursor:help}dd{margin:0;text-align:right;font-weight:600}
     <button id="zin" aria-label="Zoom in">+</button>
     <button id="zout" aria-label="Zoom out">−</button>
     <button id="reset" aria-label="Center the globe">⟲</button>
-    <button id="data-btn" aria-label="Data sources" title="Data sources: GPM, MERRA-2, GLDAS">
+    <button id="data-btn" aria-label="Climate Atlas" title="Climate Atlas: charts for the selected place">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>
     </button>
   </div>
   <div id="status" role="status"></div>
 
-  <section id="data" class="card" aria-label="Data sources" hidden>
-    <div class="dhead"><h2>Data sources</h2><button id="data-close" aria-label="Close data sources" title="Close">×</button></div>
+  <section id="data" class="card" aria-label="Climate Atlas" hidden>
+    <div class="dhead"><h2 id="data-title">Climate Atlas</h2><button id="data-close" aria-label="Close Climate Atlas" title="Close">×</button></div>
     <div id="data-tabs" role="tablist"></div>
     <p id="data-note" class="note"></p>
     <div id="data-grid"></div>
@@ -275,6 +275,7 @@ function clearSelection() {
   Object.values(CH).forEach((c) => c.destroy()); CH = {};
   $("results").innerHTML = ""; $("sel").textContent = "";
   hidePanel();
+  if (!$("data").hidden) loadRegion();                     // Climate Atlas goes back to its empty state
   if (had) fly({ destination: HOME, duration: 1.5 });      // the globe resumes rotating
 }
 $("q").addEventListener("input", () => { if (!$("q").value.trim()) clearSelection(); });
@@ -300,7 +301,10 @@ async function nameFromCoords(lat, lon) {
     const r = await (await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&zoom=5&lat=${lat}&lon=${lon}`)).json();
     if (!pick || pick.lat !== lat || pick.lon !== lon || !r.address) return;
     const a = r.address, name = [a.state || a.region || a.county, a.country].filter(Boolean).join(", ");
-    if (name) { $("sel").textContent = name; $("q").value = name; }
+    if (name) {
+      $("sel").textContent = name; $("q").value = name;
+      if (!$("data").hidden) $("data-title").textContent = "Climate Atlas · " + name;
+    }
   } catch { /* keep the coordinates */ }
 }
 
@@ -384,6 +388,7 @@ function run() {                       // new place or period: start over with t
   Object.values(CH).forEach((c) => c.destroy()); CH = {};
   $("results").innerHTML = "";
   refresh();
+  if (!$("data").hidden) loadRegion();   // keep the Climate Atlas in sync with the selected place
 }
 
 function refresh() {                   // add cards for newly selected variables, drop the deselected ones
@@ -491,84 +496,92 @@ function draw(id) {
   });
 }
 
-// ---------- Data sources: plots and CSV series from the local GPM / MERRA-2 / GLDAS folders ----------
-let LOCAL = null, TAB = null, DCH = [];
-const PALETTE = ["#4fd1ff", "#ff9a4d", "#6ee7a8", "#ffd166", "#c9a7ff", "#ff7aa8"];
-const csvObserver = new IntersectionObserver((entries) => entries.forEach((e) => {
-  if (e.isIntersecting) { csvObserver.unobserve(e.target); loadCsv(e.target); }
-}), { root: $("data"), rootMargin: "300px" });
+// ---------- Climate Atlas: charts generated for whatever place is selected ----------
+let REGION = null, TAB = null, DCH = [], dgen = 0;
 
+function destroyDataCharts() { DCH.forEach((c) => c.destroy()); DCH = []; }
 function closeData() { $("data").hidden = true; }
 $("data-close").onclick = closeData;
-$("data-btn").onclick = () => { if ($("data").hidden) { $("data").hidden = false; if (!LOCAL) loadLocal(); } else closeData(); };
-$("lightbox").onclick = () => ($("lightbox").hidden = true);
-document.addEventListener("keydown", (e) => {
-  if (e.key !== "Escape") return;
-  if (!$("lightbox").hidden) $("lightbox").hidden = true; else if (!$("data").hidden) closeData();
-});
+$("data-btn").onclick = () => { if ($("data").hidden) { $("data").hidden = false; loadRegion(); } else closeData(); };
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("data").hidden) closeData(); });
 
-async function loadLocal() {
-  $("data-grid").innerHTML = `<p class="note">Looking for plots and data files…</p>`;
-  try {
-    LOCAL = await (await fetch("/api/local")).json();
-  } catch { $("data-grid").innerHTML = `<p class="err">Could not read the local data folders.</p>`; return; }
-  if (!LOCAL.sources.length) {
+async function loadRegion() {
+  if ($("data").hidden) return;
+  destroyDataCharts();
+  if (!pick) {
+    dgen++; REGION = null;
+    $("data-title").textContent = "Climate Atlas";
     $("data-tabs").innerHTML = ""; $("data-note").textContent = "";
-    $("data-grid").innerHTML = `<p class="note">No plots or CSV files were found. Put the <b>Precipitation_data</b> and <b>Statistical_Analysis</b> folders next to app.py, or set their paths in <b>DATA_ROOTS</b> inside app.py.</p>`;
-    LOCAL = null; return;
+    $("data-grid").innerHTML = `<p class="note">Search for a country or region, or click the globe, to see its climate charts here.</p>`;
+    return;
   }
-  TAB = LOCAL.sources[0].id; drawTabs(); drawGrid();
+  const place = $("sel").textContent || `${pick.lat.toFixed(2)}°, ${pick.lon.toFixed(2)}°`;
+  $("data-title").textContent = "Climate Atlas · " + place;
+  const key = [pick.lat, pick.lon, $("y0").value, $("y1").value].join(",");
+  if (REGION && REGION.key === key) { drawTabs(); drawGrid(); return; }
+
+  const g = ++dgen;
+  $("data-tabs").innerHTML = ""; $("data-note").textContent = "";
+  $("data-grid").innerHTML = `<p class="note">Retrieving climate series for ${esc(place)}… this can take a few seconds.</p>`;
+  try {
+    const qs = new URLSearchParams({ lat: pick.lat, lon: pick.lon, start: $("y0").value, end: $("y1").value });
+    const r = await fetch("/api/region?" + qs), d = await r.json();
+    if (g !== dgen) return;                       // the user picked another place meanwhile
+    if (!r.ok) throw new Error(d.error || "Request failed.");
+    REGION = { ...d, key };
+    if (!REGION.groups.some((s) => s.id === TAB)) TAB = (REGION.groups.find((s) => s.items.length) || REGION.groups[0]).id;
+    drawTabs(); drawGrid();
+  } catch (e) {
+    if (g !== dgen) return;
+    REGION = null;
+    $("data-grid").innerHTML = `<p class="err">${esc(e.message)}</p>`;
+  }
 }
 
 function drawTabs() {
-  $("data-tabs").innerHTML = LOCAL.sources.map((s) =>
+  $("data-tabs").innerHTML = REGION.groups.map((s) =>
     `<button class="tab" role="tab" aria-selected="${s.id === TAB}" data-id="${esc(s.id)}">${esc(s.name)} (${s.items.length})</button>`).join("");
   $("data-tabs").querySelectorAll(".tab").forEach((b) => (b.onclick = () => { TAB = b.dataset.id; drawTabs(); drawGrid(); $("data").scrollTop = 0; }));
 }
 
 function drawGrid() {
-  DCH.forEach((c) => c.destroy()); DCH = [];
-  const src = LOCAL.sources.find((s) => s.id === TAB);
-  $("data-note").textContent = src.note;
-  $("data-grid").innerHTML = src.items.map((it) => it.kind === "png"
-    ? `<figure class="fig"><img loading="lazy" src="${esc(it.url)}" alt="${esc(it.title)}"><figcaption><b>${esc(it.title)}</b><small>${esc(it.file)}</small></figcaption></figure>`
-    : `<figure class="fig" data-url="${esc(it.url)}"><div class="plotbox"><p class="note">Loading chart…</p></div><figcaption><b>${esc(it.title)}</b><small>${esc(it.file)}</small></figcaption></figure>`).join("");
-  $("data-grid").querySelectorAll("img").forEach((img) => {
-    img.onclick = () => { $("lightbox").querySelector("img").src = img.src; $("lightbox").hidden = false; };
-    img.onerror = () => { img.replaceWith(Object.assign(document.createElement("p"), { className: "err", textContent: "This image could not be loaded." })); };
-  });
-  $("data-grid").querySelectorAll("figure[data-url]").forEach((f) => csvObserver.observe(f));
+  destroyDataCharts();
+  const grp = REGION.groups.find((s) => s.id === TAB);
+  $("data-note").textContent = `${grp.note} Source: ${REGION.source}.`;
+  if (!grp.items.length) {
+    $("data-grid").innerHTML = `<p class="note">No data are available for this group at this location (for example, land variables over open ocean).</p>`;
+    return;
+  }
+  $("data-grid").innerHTML = grp.items.map((it, i) => {
+    const sub = it.trend
+      ? `Sen's slope ${sg(it.sen_per_decade, 3)} ${esc(it.unit)}/decade · p = ${fp(it.p)} · ${it.significant ? "significant " + it.direction + " trend" : "no significant trend"}`
+      : "Not enough complete years to estimate a trend.";
+    return `<figure class="fig"><div class="plotbox"><canvas id="dc-${i}" role="img" aria-label="${esc(it.name)} time series"></canvas></div>
+      <figcaption><b>${esc(it.name)}</b><small>${sub}</small></figcaption></figure>`;
+  }).join("");
+  grp.items.forEach((it, i) => drawRegionChart($("dc-" + i), it));
 }
 
-async function loadCsv(fig) {
-  const box = fig.querySelector(".plotbox");
-  try {
-    const r = await fetch(fig.dataset.url), d = await r.json();
-    if (!r.ok) throw new Error(d.error || "Could not read this file.");
-    if (d.kind === "series") { box.innerHTML = `<canvas></canvas>`; drawSeries(box.querySelector("canvas"), d); }
-    else {
-      box.classList.add("tbl");
-      box.innerHTML = `<table><thead><tr>${d.columns.map((c) => `<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>${
-        d.rows.map((r) => `<tr>${r.map((c) => `<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
-    }
-  } catch (e) { box.innerHTML = `<p class="err">${esc(e.message)}</p>`; }
-}
-
-function drawSeries(cv, d) {
+function drawRegionChart(cv, it) {
   const tick = { color: "#c3d3f0" }, grid = { color: "rgba(195,211,240,.16)" };
+  const xy = (a) => a.map(([x, y]) => ({ x, y }));
+  const ds = [
+    { type: "line", label: "Monthly values", data: it.t.map((x, i) => ({ x, y: it.values[i] })), borderColor: "rgba(195,211,240,.45)", borderWidth: 1, pointRadius: 0 },
+    { type: "line", label: "12-month mean", data: xy(it.smooth), borderColor: "#4fd1ff", borderWidth: 2, pointRadius: 0 },
+  ];
+  if (it.trend) ds.push({ type: "line", label: it.significant ? "Trend (significant)" : "Trend (not significant)", data: xy(it.trend),
+    borderColor: "#ff9a4d", borderDash: [6, 4], borderWidth: 2.5, pointRadius: 0 });
   DCH.push(new Chart(cv, {
-    type: "line",
-    data: { datasets: d.series.map((s, i) => ({ label: s.name, data: s.points.map(([x, y]) => ({ x, y })),
-      borderColor: PALETTE[i % PALETTE.length], backgroundColor: PALETTE[i % PALETTE.length], borderWidth: 1.6, pointRadius: 0 })) },
+    data: { datasets: ds },
     options: {
       responsive: true, maintainAspectRatio: false, animation: false, parsing: false,
       scales: {
-        x: { type: "linear", ticks: { ...tick, callback: (x) => Math.round(x) }, grid, title: { display: true, text: d.x_label, color: "#c3d3f0" } },
-        y: { ticks: tick, grid },
+        x: { type: "linear", ticks: { ...tick, callback: (x) => Math.round(x) }, grid, title: { display: true, text: "Year", color: "#c3d3f0" } },
+        y: { ticks: tick, grid, title: { display: true, text: it.unit, color: "#c3d3f0" } },
       },
       plugins: {
-        legend: { display: d.series.length > 1, labels: { color: "#e9f0ff" } },
-        tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.parsed.y.toFixed(3)} (${c.parsed.x.toFixed(2)})` } },
+        legend: { labels: { color: "#e9f0ff", boxWidth: 14, font: { size: 10 } } },
+        tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.parsed.y.toFixed(3)} ${it.unit} (${c.parsed.x.toFixed(2)})` } },
       },
     },
   }));

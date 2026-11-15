@@ -13,6 +13,7 @@ from werkzeug.utils import safe_join
 
 from analysis import AnalysisError, analyze
 from data_sources import VARIABLES, DataError, fetch_monthly
+from region_data import RegionError, region_report
 
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True      # re-read gt.html on every visit
@@ -87,7 +88,29 @@ def series():
 
 
 # ---------------------------------------------------------------------------
-# Local data: discovery, images, CSV series
+# Climate Atlas: charts for ANY selected place (NASA POWER, see region_data.py)
+# ---------------------------------------------------------------------------
+@app.route("/api/region")
+def region():
+    try:
+        lat, lon = float(request.args["lat"]), float(request.args["lon"])
+        y0 = max(1981, int(request.args.get("start", 1985)))
+        y1 = min(date.today().year, int(request.args.get("end", date.today().year)))
+    except (KeyError, ValueError):
+        return jsonify(error="Provide valid lat, lon, start and end."), 400
+    if not (math.isfinite(lat) and math.isfinite(lon) and -90 <= lat <= 90):
+        return jsonify(error="Latitude must be between -90 and 90."), 400
+    if y1 - y0 < 9:
+        return jsonify(error="Select at least 10 years."), 400
+    lon = ((lon + 180) % 360) - 180
+    try:
+        return jsonify(region_report(lat, lon, y0, y1))
+    except RegionError as e:
+        return jsonify(error=str(e)), 502
+
+
+# ---------------------------------------------------------------------------
+# Local data: discovery, images, CSV series (kept available, no longer used by the panel)
 # ---------------------------------------------------------------------------
 SKIP_DIRS = {"__pycache__", ".git", "node_modules", "venv", ".venv"}
 IMG_EXT = (".png", ".jpg", ".jpeg")

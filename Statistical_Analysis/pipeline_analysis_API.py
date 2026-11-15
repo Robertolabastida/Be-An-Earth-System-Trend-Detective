@@ -15,11 +15,11 @@ def fetch_nasa_api_data(min_lat, max_lat, min_lon, max_lon, start_year, end_year
     center_lon = round((min_lon + max_lon) / 2.0, 4)
     
     url = "https://power.larc.nasa.gov/api/temporal/monthly/point"
-    variables = "T2M,WS10M,QV2M,SLP"
+    variables = "T2M,WS10M,QV2M,SLP,PRECTOTCORR,GWETTOP,EVPTRNS,TSOIL1,TS"
     
     params = {
         "parameters": variables,
-        "community": "RE",
+        "community": "AG",
         "latitude": center_lat,
         "longitude": center_lon,
         "start": start_year,
@@ -55,7 +55,7 @@ def fetch_nasa_api_data(min_lat, max_lat, min_lon, max_lon, start_year, end_year
     return loaded_data, None
 
 # --- PHASE 2: SCREENING AND STATISTICAL ANALYSIS ---
-def analyze_climate_trends(min_lat, max_lat, min_lon, max_lon, start_year, end_year, directory=".", top_n=5):
+def analyze_climate_trends(min_lat, max_lat, min_lon, max_lon, start_year, end_year, directory=".", top_n=9):
     figures_dir = os.path.join(directory, "Figures_API")
     if os.path.exists(figures_dir):
         for file in glob.glob(os.path.join(figures_dir, "*.*")):

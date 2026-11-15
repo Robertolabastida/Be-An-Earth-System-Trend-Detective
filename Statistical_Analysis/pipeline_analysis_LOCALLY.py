@@ -20,6 +20,7 @@ def load_and_clean_nasa_csv(filepath):
     
     df['time'] = pd.to_datetime(df['time'])
     df = df[['time', val_col]].rename(columns={val_col: 'Raw_Value'})
+    df['Year'] = df['time'].dt.year
     
     filename = os.path.basename(filepath)
     parts = filename.split('.')
@@ -34,9 +35,9 @@ def analyze_climate_trends(directory=".", top_n=5):
     # ==========================================
     # PREPARATION: FIGURE FOLDER MANAGEMENT
     # ==========================================
-    figures_dir = os.path.join(directory, "Figures")
+    figures_dir = os.path.join(directory, "Figures_API")
     if os.path.exists(figures_dir):
-        for file in glob.glob(os.path.join(figures_dir, "*.png")):
+        for file in glob.glob(os.path.join(figures_dir, "*.*")):
             os.remove(file)
     else:
         os.makedirs(figures_dir)
@@ -63,13 +64,14 @@ def analyze_climate_trends(directory=".", top_n=5):
         
         df_wind = pd.merge(df_u, df_v, on='time', suffixes=('_u', '_v'))
         df_wind['Raw_Value'] = np.sqrt(df_wind['Raw_Value_u']**2 + df_wind['Raw_Value_v']**2)
+        df_wind['Year'] = df_wind['time'].dt.year
         
-        loaded_data['Wind_Speed'] = df_wind[['time', 'Raw_Value']]
+        loaded_data['Wind_Speed'] = df_wind[['time', 'Raw_Value', 'Year']]
         del loaded_data[u_key]
         del loaded_data[v_key]
         
     # ==========================================
-    # PHASE 1: SCREENING (Extremes Delta)
+    # PHASE 1: SCREENING
     # ==========================================
     screening_results = []
     
@@ -103,58 +105,53 @@ def analyze_climate_trends(directory=".", top_n=5):
         df = loaded_data[var]
         
         df['Smoothed_Value'] = df['Raw_Value'].rolling(window=12, center=True).mean()
-        df_smoothed = df.dropna(subset=['Smoothed_Value']).copy()
-        
-        y_smooth = df_smoothed['Smoothed_Value'].values
-        x_smooth = np.arange(len(y_smooth))
-        y_raw = df['Raw_Value'].values
-        
-        time_raw = df['time']
-        time_smooth = df_smoothed['time']
-        
-        # --- TESTS ---
-        slope, intercept, _, p_value_ols, _ = stats.linregress(x_smooth, y_smooth)
+        y_raw = df['Raw_Value'].dropna().values
+
+        df_annual = df.groupby('Year')['Raw_Value'].mean().reset_index()
+        y_annual = df_annual['Raw_Value'].values
+        x_annual = np.arange(len(y_annual))
+
+        slope, intercept, _, p_value_ols, _ = stats.linregress(x_annual, y_annual)
         ols_sig = p_value_ols < 0.05
+        ols_trend = "Increasing" if (ols_sig and slope > 0) else "Decreasing" if ols_sig else "No Trend"
         
-        if ols_sig:
-            ols_trend = "Increasing" if slope > 0 else "Decreasing"
-        else:
-            ols_trend = "No Trend"
-        
-        mk_res = mk.original_test(y_smooth)
+        mk_res = mk.original_test(y_annual)
         mk_sig = abs(mk_res.z) > 1.96 and mk_res.p < 0.05
-        if mk_sig:
-            mk_trend = "Increasing" if mk_res.trend == 'increasing' else "Decreasing"
-        else:
-            mk_trend = "No Trend"
+        mk_trend = "Increasing" if (mk_sig and mk_res.trend == 'increasing') else "Decreasing" if mk_sig else "No Trend"
         
         smk_res = mk.seasonal_test(y_raw, period=12)
         smk_sig = smk_res.p < 0.05
+        smk_trend = "Increasing" if (smk_sig and smk_res.trend == 'increasing') else "Decreasing" if smk_sig else "No Trend"
 
         adf_res = adfuller(y_raw)
         is_stationary = adf_res[1] < 0.05
 
-        # --- HUMAN CONCLUSION ---
         if mk_sig and ols_sig:
-            conclusion = f"Strong evidence indicates a significant {mk_res.trend} trend in {var} over the selected period."
-        elif mk_sig or smk_sig:
-            conclusion = f"Moderate evidence suggests a {mk_res.trend} trend in {var}, mostly driven by seasonal shifts."
+            if item['change_pct'] < 1.0:
+                conclusion = f"A statistically significant {mk_res.trend} long-term trend was detected in {var}, but the absolute magnitude of change is minimal ({round(item['change_pct'], 2)}%)."
+            else:
+                conclusion = f"Strong evidence indicates a significant {mk_res.trend} long-term trend in {var} over the selected period."
+        elif mk_sig or ols_sig:
+            trend_dir = mk_trend if mk_sig else ols_trend
+            conclusion = f"Moderate evidence suggests a {trend_dir} trend in {var} based on annual averages."
+        elif smk_sig:
+            conclusion = f"A {smk_trend} seasonal trend was detected in {var}, meaning specific months are changing, but the annual average remains stable."
         else:
-            conclusion = f"No statistically significant changes were detected for {var}. The variations are likely natural climate noise."
+            conclusion = f"No statistically significant long-term changes were detected for {var}. Variations appear to be natural climate noise."
 
-        # --- PLOTS ---
         plt.figure(figsize=(10, 5))
-        plt.plot(time_raw, y_raw, label='Raw Data', color='lightgray', alpha=0.6)
-        plt.plot(time_smooth, y_smooth, label='Smoothed (12-Month)', color='blue', linewidth=2)
-
-        if ols_sig:
-            trend_line = intercept + slope * x_smooth
-            plt.plot(time_smooth, trend_line, color='red', linestyle='--', label='Linear Trend (OLS)')
+        plt.plot(df['time'], df['Raw_Value'], label='Monthly Raw Data', color='lightgray', alpha=0.5)
+        plt.plot(df['time'], df['Smoothed_Value'], label='12-Month Rolling Mean', color='blue', alpha=0.7)
+        
+        if ols_sig or mk_sig or smk_sig:
+            trend_line_annual = intercept + slope * x_annual
+            annual_dates = pd.to_datetime(df_annual['Year'].astype(str) + '-07-01')
+            plt.plot(annual_dates, trend_line_annual, color='red', linewidth=2.5, linestyle='--', label='General Trend')
 
         plt.title(f"Time Series Analysis: {var}")
         plt.xlabel("Year")
         plt.ylabel("Value")
-        plt.legend()
+        plt.legend(loc='best')
         plt.grid(linestyle='--', alpha=0.5)
         plt.tight_layout()
         
@@ -162,21 +159,20 @@ def analyze_climate_trends(directory=".", top_n=5):
         plt.savefig(plot_filename)
         plt.close() 
 
-        # --- PACKAGE RESULTS ---
         final_report.append({
             "variable": var,
             "overall_change_pct": round(item['change_pct'], 2),
             "human_conclusion": conclusion,
             "plot_saved_as": plot_filename,
             "expert_statistics": {
-                "linear_regression": {
+                "annual_linear_regression": {
                     "slope": round(slope, 5), "p_value": round(p_value_ols, 5), "is_significant": bool(ols_sig), "direction": ols_trend
                 },
-                "mann_kendall": {
+                "annual_mann_kendall": {
                     "z_score": round(mk_res.z, 4), "p_value": round(mk_res.p, 5), "is_significant": bool(mk_sig), "direction": mk_trend
                 },
-                "seasonal_mann_kendall": {
-                    "z_score": round(smk_res.z, 4), "p_value": round(smk_res.p, 5), "is_significant": bool(smk_sig)
+                "monthly_seasonal_mann_kendall": {
+                    "z_score": round(smk_res.z, 4), "p_value": round(smk_res.p, 5), "is_significant": bool(smk_sig), "direction": smk_trend
                 },
                 "unit_root_adf": {
                     "test_statistic": round(adf_res[0], 4), "p_value": round(adf_res[1], 5), "is_stationary": bool(is_stationary)

@@ -38,10 +38,6 @@ python app.py
 
 Open <http://127.0.0.1:5000> in your browser. In GitHub Codespaces, open port 5000 from the **Ports** tab.
 
-## Limitations
-
-Each report uses a single point, not an average of the whole country. MERRA-2 is a model-based reanalysis with a resolution of about 50 km, and a trend of roughly 20 years shows recent change, not proof of long-term climate change. The forecast charts are static examples of the model's performance.
-
 ## Contact
 
 g14_garces@ens.cnyn.unam.mx- g14_valdivia@ens.cnyn.unam.mx - g14_noriega@ens.cnyn.unam.mx - g14_leon@ens.cnyn.unam.mx - g15_acevedo@ens.cnyn.unam.mx -g16_medina@ens.cnyn.unam.mx -· <https://github.com/Robertolabastida/Be-An-Earth-System-Trend-Detective>

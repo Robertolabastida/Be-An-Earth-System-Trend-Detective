@@ -461,7 +461,7 @@ memory_txt = (
     else f"exhibited low month-to-month persistence (r1 = {df_stats.loc[2, 'Anom_Autocorr_Lag1']:.2f}, Ljung-Box p = {df_stats.loc[2, 'LjungBox_p_Lag1']:.3f})"
 )
 
-print("\n--- SCIENTIFIC CONCLUSION DRAFT (GLDAS-2.1 STYLE) ---")
+print("\n--- SCIENTIFIC CONCLUSION DRAFT ---")
 print(
     f"The analysis of GPM IMERG V07 precipitation for the Ensenada region during 2000–2025 "
     f"showed marked interannual variability and a pronounced spatial gradient between the Pacific coast and the eastern desert. "

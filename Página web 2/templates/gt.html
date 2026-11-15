@@ -323,6 +323,7 @@ $("search").onsubmit = async (e) => {
 };
 
 // ---------- Variables, divided into sections the user can pick from ----------
+let defaultsApplied = false;
 const groupOf = (v) => (v.ocean_only ? "Ocean" : "Atmosphere");
 const GROUP_NOTE = { Atmosphere: "Air temperature and rainfall at the marked point.", Ocean: "Sea surface conditions. Only works over ocean points." };
 fetch("/api/variables").then((r) => r.json()).then((l) => { VARS = l; drawVars(); });
@@ -345,7 +346,11 @@ function drawVars() {
     ids.forEach((id) => (all ? SEL.delete(id) : SEL.add(id)));
     syncVars(); refresh();
   }));
-  syncVars();
+  if (!SEL.size && !defaultsApplied) {       // first load: start with the first section selected so charts show right away
+    defaultsApplied = true;
+    (Object.values(groups)[0] || []).forEach((v) => SEL.add(v.id));
+  }
+  syncVars(); refresh();
 }
 function syncVars() {
   $("vars").querySelectorAll("input").forEach((i) => (i.checked = SEL.has(i.dataset.id)));

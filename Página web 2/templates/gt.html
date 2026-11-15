@@ -99,12 +99,17 @@ dt{color:var(--muted);cursor:help}dd{margin:0;text-align:right;font-weight:600}
 .fig figcaption small{display:block;color:var(--muted);font-size:.72rem;overflow-wrap:anywhere}
 .plotbox{position:relative;height:240px}
 
-/* Map layers selector (inspired by the map-type picker of online maps) */
+/* Map layers window: gradients on the globe + country highlight. Can be minimized. */
 #layers{position:fixed;right:68px;bottom:34px;z-index:5;width:min(470px,calc(100vw - 90px));padding:12px 14px 14px}
 #layers[hidden]{display:none}
-.lhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+#layers.min{width:min(320px,calc(100vw - 90px));padding:10px 12px}
+#layers.min #lbody{display:none}
+.lhead{display:flex;align-items:center;gap:8px}
 .lhead b{font-family:Fraunces,serif;font-size:1.05rem}
-#layers-close{flex:none;width:30px;height:30px;padding:0;font-size:1.1rem;line-height:1;border-radius:99px;border-color:var(--edge);color:var(--edge)}
+.lchip{flex:1;min-width:0;font-size:.74rem;color:var(--cyan);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lbtns{display:flex;gap:6px;flex:none}
+.lbtns button{width:30px;height:30px;padding:0;font-size:1.1rem;line-height:1;border-radius:99px;border-color:var(--edge);color:var(--edge)}
+#lbody{margin-top:10px}
 #layer-tiles{display:flex;flex-wrap:wrap;gap:10px 8px}
 .ltile{display:flex;flex-direction:column;align-items:center;gap:6px;width:78px;padding:0;background:none;border:0;border-radius:12px}
 .ltile:hover{background:none}
@@ -114,9 +119,13 @@ dt{color:var(--muted);cursor:help}dd{margin:0;text-align:right;font-weight:600}
 .ltile .lb{font-size:.72rem;color:var(--muted);text-align:center;line-height:1.15}
 .ltile[aria-checked=true] .lb{color:var(--text);font-weight:600}
 .lctl{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap}
-.lctl label{flex:1;min-width:140px;font-size:.78rem;color:var(--muted)}
-.lctl input{width:100%;margin-top:4px}
+.lctl label{flex:1;min-width:120px;font-size:.78rem;color:var(--muted)}
+.lctl input,.lctl select{width:100%;margin-top:4px}
 .lctl input[type=range]{padding:0;accent-color:var(--cyan);background:none;border:0}
+.lctl input[type=color]{padding:2px;height:34px;cursor:pointer}
+.lsec{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.chk{display:flex;align-items:center;gap:8px;font-size:.84rem;cursor:pointer}
+.chk input{flex:none;width:18px;height:18px;padding:0;accent-color:var(--cyan)}
 #legend{margin-top:12px}
 #legend[hidden]{display:none}
 #legend-bar{height:10px;border-radius:99px}
@@ -128,6 +137,7 @@ dt{color:var(--muted);cursor:help}dd{margin:0;text-align:right;font-weight:600}
   #panel{max-height:60vh}
   #data{left:8px;right:8px;top:8px;bottom:8px;z-index:6}
   #layers{right:8px;left:8px;width:auto;bottom:8px;z-index:7}
+  #layers.min{width:auto}
 }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -172,7 +182,7 @@ dt{color:var(--muted);cursor:help}dd{margin:0;text-align:right;font-weight:600}
     <button id="zin" aria-label="Zoom in">+</button>
     <button id="zout" aria-label="Zoom out">−</button>
     <button id="reset" aria-label="Center the globe">⟲</button>
-    <button id="layers-btn" aria-label="Map layers" aria-expanded="false" title="Map layers: temperature gradient and more">
+    <button id="layers-btn" aria-label="Map layers" aria-expanded="false" title="Map layers: temperature gradient and country highlight">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 16 9 5 9-5"/></svg>
     </button>
     <button id="data-btn" aria-label="Climate Atlas" title="Climate Atlas: charts for the selected place">
@@ -182,17 +192,33 @@ dt{color:var(--muted);cursor:help}dd{margin:0;text-align:right;font-weight:600}
   <div id="status" role="status"></div>
 
   <section id="layers" class="card" aria-label="Map layers" hidden>
-    <div class="lhead"><b>Map layers</b><button id="layers-close" aria-label="Close map layers" title="Close">×</button></div>
-    <div id="layer-tiles" role="radiogroup" aria-label="Map layer"></div>
-    <div class="lctl">
-      <label>Opacity <input type="range" id="ov-alpha" min="20" max="100" value="75"></label>
-      <label>Date (empty = latest) <input type="date" id="ov-date" min="2003-01-01"></label>
+    <div class="lhead">
+      <b>Map layers</b><span id="lname" class="lchip"></span>
+      <span class="lbtns">
+        <button id="layers-min" aria-label="Minimize map layers" aria-expanded="true" title="Minimize">–</button>
+        <button id="layers-close" aria-label="Close map layers" title="Close">×</button>
+      </span>
+    </div>
+    <div id="lbody">
+      <div id="layer-tiles" role="radiogroup" aria-label="Map layer"></div>
+      <div class="lctl">
+        <label>Opacity <input type="range" id="ov-alpha" min="20" max="100" value="80"></label>
+        <label>Date (empty = latest) <input type="date" id="ov-date" min="2003-01-01"></label>
+      </div>
+      <div class="lsec">
+        <label class="chk"><input type="checkbox" id="hl-on" checked> Highlight the selected country</label>
+        <div class="lctl">
+          <label>Area <select id="hl-scope"><option value="country">Whole country</option><option value="place">State / place</option></select></label>
+          <label>Color <input type="color" id="hl-color" value="#4fd1ff"></label>
+          <label>Fill <input type="range" id="hl-alpha" min="0" max="60" value="22"></label>
+        </div>
+      </div>
+      <p id="ov-note" class="note"></p>
     </div>
     <div id="legend" hidden>
       <div id="legend-bar"></div>
       <div class="lrow"><span id="lg-lo"></span><span id="lg-hi"></span></div>
     </div>
-    <p id="ov-note" class="note"></p>
   </section>
 
   <section id="data" class="card" aria-label="Climate Atlas" hidden>
@@ -275,28 +301,20 @@ $("reset").onclick = () => fly({ destination: HOME, duration: 1.5 });
 
 // ---------- Map layers: worldwide gradients painted on the globe (NASA GIBS) ----------
 // Swatches are illustrative colour ramps. The exact scales are published by NASA Worldview.
+// Monthly layers are gap-free (no satellite orbit stripes); the date is snapped to the first day of the month.
 const OVERLAYS = [
+  { id: "air", name: "Air temperature", layer: "MERRA2_2m_Air_Temperature_Monthly", level: 6, monthly: true, lo: "Cooler", hi: "Hotter",
+    grad: "linear-gradient(90deg,#4b2d8f,#2f7fd0,#58c7c0,#f2e35a,#ef8a2b,#b3202a)",
+    note: "Monthly mean air temperature at 2 m from the MERRA-2 reanalysis. Covers the whole globe without gaps." },
   { id: "lst", name: "Land temperature", layer: "MODIS_Terra_Land_Surface_Temp_Day", level: 7, lo: "Cooler", hi: "Hotter",
     grad: "linear-gradient(90deg,#2b3a9e,#2fa4d8,#7bd36b,#f6e04a,#f08a2b,#c0262d)",
-    note: "Daytime land surface temperature from MODIS on Terra. Land only; clouds leave gaps." },
-  { id: "air", name: "Air temperature", layer: "AIRS_L3_Surface_Air_Temperature_Daily_Day", level: 6, lo: "Cooler", hi: "Hotter",
-    grad: "linear-gradient(90deg,#4b2d8f,#2f7fd0,#58c7c0,#f2e35a,#ef8a2b,#b3202a)",
-    note: "Near-surface air temperature from AIRS on Aqua (daytime). Orbit gaps may appear." },
+    note: "Daytime land surface temperature from MODIS on Terra (1 km). Land only; clouds leave gaps on a given day." },
   { id: "sst", name: "Sea temperature", layer: "GHRSST_L4_MUR_Sea_Surface_Temperature", level: 7, lo: "Colder", hi: "Warmer",
     grad: "linear-gradient(90deg,#1a2a8c,#2a7bd1,#37c1c8,#f4e55a,#f08a2b,#c0262d)",
-    note: "Sea surface temperature (GHRSST MUR, about 1 km). Ocean only." },
+    note: "Sea surface temperature (GHRSST MUR, about 1 km, gap-filled). Ocean only." },
   { id: "rain", name: "Precipitation", layer: "IMERG_Precipitation_Rate", level: 6, lo: "Light", hi: "Heavy",
     grad: "linear-gradient(90deg,#9ad8ff,#3d8be0,#2fc16b,#f6e04a,#f08a2b,#c0262d)",
     note: "Precipitation rate from NASA IMERG (GPM). The latest layer shows the current rain rate." },
-  { id: "ndvi", name: "Vegetation", layer: "MODIS_Terra_NDVI_8Day", level: 9, lo: "Sparse", hi: "Dense",
-    grad: "linear-gradient(90deg,#8b6b3d,#c9b46a,#b6d36a,#4fa84a,#17642c)",
-    note: "Vegetation greenness (NDVI, 8-day composite, MODIS on Terra)." },
-  { id: "aod", name: "Aerosols", layer: "MODIS_Terra_Aerosol_Optical_Depth", level: 6, lo: "Clean air", hi: "Heavy haze",
-    grad: "linear-gradient(90deg,#3f8fd6,#7bd36b,#f6e04a,#f08a2b,#8a1c1c)",
-    note: "Aerosol optical depth: dust, smoke and haze in the air (MODIS on Terra)." },
-  { id: "snow", name: "Snow cover", layer: "MODIS_Terra_NDSI_Snow_Cover", level: 8, lo: "Thin", hi: "Full snow",
-    grad: "linear-gradient(90deg,#14307a,#4d8be0,#a9d5ff,#ffffff)",
-    note: "Snow cover from MODIS on Terra. Polar night and clouds leave gaps." },
 ];
 const BASE_TILE = { id: "none", name: "Base map", grad: "linear-gradient(160deg,#0b3d91,#2f7fc1 45%,#4f8f4a 72%,#c9b27a)" };
 let OV = "none", OVL = null;
@@ -313,16 +331,26 @@ function setOverlay(id) {
   if (OVL) { L.remove(OVL, true); OVL = null; }
   OV = id;
   const o = OVERLAYS.find((x) => x.id === id);
+  // With a gradient on, light the whole globe evenly: no black night side and no city lights over the colours.
+  scene.globe.enableLighting = !o;
+  scene.globe.dynamicAtmosphereLighting = !o;
+  lights.show = !o;
   $("legend").hidden = !o;
+  $("lname").textContent = o ? o.name : "";
   $("ov-note").textContent = o ? o.note + " If the map looks empty, no data exist for that date: pick another." : "Choose a layer to paint a worldwide gradient on the globe.";
   if (o) {
-    const matrix = "GoogleMapsCompatible_Level" + o.level, day = $("ov-date").value || "default";
+    const matrix = "GoogleMapsCompatible_Level" + o.level;
+    let day = $("ov-date").value || "default";
+    if (o.monthly && day !== "default") day = day.slice(0, 7) + "-01";
     OVL = L.addImageryProvider(new Cesium.WebMapTileServiceImageryProvider({
       url: `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${o.layer}/default/${day}/${matrix}/{TileMatrix}/{TileRow}/{TileCol}.png`,
       layer: o.layer, style: "default", format: "image/png", tileMatrixSetID: matrix, maximumLevel: o.level,
       tileWidth: 256, tileHeight: 256, tilingScheme: new Cesium.WebMercatorTilingScheme(), credit: "NASA GIBS · " + o.name,
     }));
     OVL.alpha = $("ov-alpha").value / 100;
+    OVL.magnificationFilter = Cesium.TextureMagnificationFilter.LINEAR;   // smooth, not blocky, when zoomed in
+    OVL.minificationFilter = Cesium.TextureMinificationFilter.LINEAR;
+    OVL.saturation = 1.12;
     $("legend-bar").style.background = o.grad;
     $("lg-lo").textContent = o.lo; $("lg-hi").textContent = o.hi;
   }
@@ -331,11 +359,66 @@ function setOverlay(id) {
 function toggleLayers(open) {
   $("layers").hidden = !open; $("layers-btn").setAttribute("aria-expanded", String(open));
 }
+function minimizeLayers(min) {
+  $("layers").classList.toggle("min", min);
+  const b = $("layers-min");
+  b.textContent = min ? "+" : "–";
+  b.title = min ? "Expand" : "Minimize";
+  b.setAttribute("aria-label", min ? "Expand map layers" : "Minimize map layers");
+  b.setAttribute("aria-expanded", String(!min));
+}
 $("layers-btn").onclick = () => toggleLayers($("layers").hidden);
 $("layers-close").onclick = () => toggleLayers(false);
+$("layers-min").onclick = () => minimizeLayers(!$("layers").classList.contains("min"));
 $("ov-alpha").oninput = () => { if (OVL) OVL.alpha = $("ov-alpha").value / 100; };
 $("ov-date").onchange = () => { if (OV !== "none") setOverlay(OV); };
 drawLayerTiles(); setOverlay("none");
+
+// ---------- Country highlight: colours the selected country (or state / place) on the globe ----------
+let HL = null, hlGen = 0, HLINFO = null;
+const CGEO = {};                                       // country boundaries already downloaded, by ISO code
+
+function removeHL() { if (HL) { viewer.dataSources.remove(HL, true); HL = null; } }
+function clearHighlight() { hlGen++; removeHL(); }
+
+async function countryGeo(cc, name) {
+  if (!cc) return null;
+  if (CGEO[cc] !== undefined) return CGEO[cc];
+  try {
+    const r = await (await fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&featureType=country&polygon_geojson=1&polygon_threshold=0.02"
+      + "&countrycodes=" + encodeURIComponent(cc) + "&q=" + encodeURIComponent(name || cc))).json();
+    const g = r[0] && r[0].geojson;
+    return (CGEO[cc] = g && /Polygon/.test(g.type) ? g : null);
+  } catch { return null; }                             // network problem: do not cache, try again later
+}
+
+async function updateHighlight() {
+  if (!HLINFO || !$("hl-on").checked) { clearHighlight(); return; }
+  const g = ++hlGen;
+  removeHL();
+  const geo = $("hl-scope").value === "country" ? await countryGeo(HLINFO.cc, HLINFO.country) : HLINFO.geo;
+  if (g !== hlGen || !geo || !/Polygon/.test(geo.type)) return;
+  const col = C.fromCssColorString($("hl-color").value);
+  let ds;
+  try {
+    ds = await Cesium.GeoJsonDataSource.load({ type: "Feature", properties: {}, geometry: geo },
+      { stroke: C.TRANSPARENT, fill: col.withAlpha($("hl-alpha").value / 100), clampToGround: true });
+  } catch { return; }
+  if (g !== hlGen) return;                             // another place was chosen while this one loaded
+  const now = Cesium.JulianDate.now();
+  ds.entities.values.slice().forEach((e) => {          // outline: ground polygons cannot draw their own border
+    const h = e.polygon && e.polygon.hierarchy && e.polygon.hierarchy.getValue(now);
+    if (!h) return;
+    [h.positions, ...(h.holes || []).map((x) => x.positions)].forEach((pos) => {
+      if (pos && pos.length > 1) ds.entities.add({ polyline: { positions: [...pos, pos[0]], width: 3, material: col, clampToGround: true } });
+    });
+  });
+  viewer.dataSources.add(ds);
+  HL = ds;
+}
+["hl-on", "hl-scope", "hl-color", "hl-alpha"].forEach((id) => ($(id).onchange = updateHighlight));
+$("hl-color").oninput = updateHighlight;
+$("hl-alpha").oninput = updateHighlight;
 
 // ---------- Click on the globe ----------
 new Cesium.ScreenSpaceEventHandler(scene.canvas).setInputAction((c) => {
@@ -361,7 +444,8 @@ $("reopen").onclick = showPanel;
 // Removing the place name from the search box removes the selection and goes back to the global view.
 function clearSelection() {
   const had = !!pick;
-  pick = null; PARAMS = null; gen++; RES = {};
+  pick = null; PARAMS = null; gen++; RES = {}; HLINFO = null;
+  clearHighlight();
   if (marker) { viewer.entities.remove(marker); marker = null; }
   Object.values(CH).forEach((c) => c.destroy()); CH = {};
   $("results").innerHTML = ""; $("sel").textContent = "";
@@ -373,6 +457,8 @@ $("q").addEventListener("input", () => { if (!$("q").value.trim()) clearSelectio
 
 function setPick(lat, lon, o = {}) {
   pick = { lat, lon };
+  HLINFO = o.cc ? { cc: o.cc, country: o.country, geo: o.geo } : null;   // clicks fill this in once the place is named
+  clearHighlight();
   const label = o.name || `${lat.toFixed(2)}°, ${lon.toFixed(2)}°`;
   $("sel").textContent = label; $("q").value = label;
   if (marker) viewer.entities.remove(marker);
@@ -383,19 +469,22 @@ function setPick(lat, lon, o = {}) {
   if (o.fly) fly({ destination: Cesium.Cartesian3.fromDegrees(lon, lat, 3000000) });
   showPanel();
   if (!o.name) nameFromCoords(lat, lon);
+  else updateHighlight();
   run();
 }
 
-// Clicking the globe: try to show the state/country name instead of raw coordinates.
+// Clicking the globe: show the state/country name instead of raw coordinates, and colour that country.
 async function nameFromCoords(lat, lon) {
   try {
-    const r = await (await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&zoom=5&lat=${lat}&lon=${lon}`)).json();
+    const r = await (await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&zoom=5&addressdetails=1&polygon_geojson=1&polygon_threshold=0.02&lat=${lat}&lon=${lon}`)).json();
     if (!pick || pick.lat !== lat || pick.lon !== lon || !r.address) return;
     const a = r.address, name = [a.state || a.region || a.county, a.country].filter(Boolean).join(", ");
     if (name) {
       $("sel").textContent = name; $("q").value = name;
       if (!$("data").hidden) $("data-title").textContent = "Climate Atlas · " + name;
     }
+    HLINFO = { cc: a.country_code, country: a.country, geo: r.geojson };
+    updateHighlight();
   } catch { /* keep the coordinates */ }
 }
 
@@ -405,12 +494,12 @@ $("search").onsubmit = async (e) => {
   const q = $("q").value.trim(); if (!q) return;
   status("Searching…");
   try {
-    const r = await (await fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&addressdetails=1&q=" + encodeURIComponent(q))).json();
+    const r = await (await fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&addressdetails=1&polygon_geojson=1&polygon_threshold=0.02&q=" + encodeURIComponent(q))).json();
     if (!r.length) { flash(`No place found for "${q}". Try a different name.`); return; }
     status("");
     const p = r[0], lat = parseFloat(p.lat), lon = parseFloat(p.lon);
     const name = [p.name || p.display_name.split(",")[0], p.address && p.address.country].filter((x, i, a) => x && a.indexOf(x) === i).join(", ");
-    setPick(lat, lon, { name });
+    setPick(lat, lon, { name, cc: p.address && p.address.country_code, country: p.address && p.address.country, geo: p.geojson });
     const [s, n, w, ea] = p.boundingbox.map(Number);
     const span = Math.max(n - s, 0.05, (ea - w) * 0.5);
     fly({ destination: span < 0.2 ? Cesium.Cartesian3.fromDegrees(lon, lat, 60000) : Cesium.Rectangle.fromDegrees(w, s, ea, n) });

@@ -23,11 +23,10 @@ CACHE, TTL = {}, 6 * 3600
 # By default they are looked up next to this file. Change the paths here, or set
 # the PRECIP_DIR / STATS_DIR environment variables, if your folders live elsewhere.
 # ---------------------------------------------------------------------------
-ROOT = os.path.dirname(BASE)   # carpeta del repo
-
+BASE = os.path.dirname(os.path.abspath(__file__))
 DATA_ROOTS = {
-    "precip": os.environ.get("PRECIP_DIR", os.path.join(ROOT, "Precipitation_data")),
-    "stats":  os.environ.get("STATS_DIR",  os.path.join(ROOT, "Statistical_Analysis")),
+    "precip": os.environ.get("PRECIP_DIR", os.path.join(BASE, "Precipitation_data")),
+    "stats": os.environ.get("STATS_DIR", os.path.join(BASE, "Statistical_Analysis")),
 }
 
 

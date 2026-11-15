@@ -1,0 +1,7 @@
+pandas
+numpy
+scipy
+pymannkendall
+statsmodels
+matplotlib
+requests

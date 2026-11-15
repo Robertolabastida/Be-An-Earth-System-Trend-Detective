@@ -1,0 +1,13 @@
+earthaccess
+python-dotenv
+numpy
+xarray 
+h5netcdf 
+numpy
+cftime
+dask
+pandas
+matplotlib
+scipy
+pymannkendall
+statsmodels

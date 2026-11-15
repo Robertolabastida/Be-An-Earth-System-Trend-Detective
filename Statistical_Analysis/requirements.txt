@@ -4,4 +4,4 @@ scipy
 pymannkendall
 statsmodels
 matplotlib
-requirements
+requests

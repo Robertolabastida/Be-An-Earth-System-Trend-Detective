@@ -13,11 +13,12 @@ from werkzeug.utils import safe_join
 
 from analysis import AnalysisError, analyze
 from data_sources import VARIABLES, DataError, fetch_monthly
-from region_data import RegionError, region_report
+from region_data import EXTRA_VARIABLES, RegionError, extra_analyze, region_report
 
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True      # re-read gt.html on every visit
 CACHE, TTL = {}, 6 * 3600
+DEFAULT_START, DEFAULT_END = 2003, 2025         # default analysis period
 
 # ---------------------------------------------------------------------------
 # Local data folders (GPM precipitation, MERRA-2, GLDAS plots and CSV files).
@@ -45,18 +46,19 @@ def index():
 
 @app.route("/api/variables")
 def variables():
-    return jsonify(list(VARIABLES.values()))
+    # original variables + the extra NASA POWER variables (humidity, wind, soil, ...)
+    return jsonify(list(VARIABLES.values()) + list(EXTRA_VARIABLES.values()))
 
 
 @app.route("/api/series")
 def series():
-    var = VARIABLES.get(request.args.get("var", ""))
+    var = VARIABLES.get(request.args.get("var", "")) or EXTRA_VARIABLES.get(request.args.get("var", ""))
     if var is None:
         return jsonify(error="Unknown variable."), 400
     try:
         lat, lon = float(request.args["lat"]), float(request.args["lon"])
-        y0 = int(request.args.get("start", 1985))
-        y1 = int(request.args.get("end", date.today().year))
+        y0 = int(request.args.get("start", DEFAULT_START))
+        y1 = int(request.args.get("end", DEFAULT_END))
     except (KeyError, ValueError):
         return jsonify(error="Provide valid lat, lon, start and end."), 400
     if not (math.isfinite(lat) and math.isfinite(lon) and -90 <= lat <= 90):
@@ -77,8 +79,13 @@ def series():
         payload = hit[1]
     else:
         try:
-            result = analyze(fetch_monthly(var, lat, lon, y0, y1))
+            if var["id"] in EXTRA_VARIABLES:
+                result = extra_analyze(var, lat, lon, y0, y1)
+            else:
+                result = analyze(fetch_monthly(var, lat, lon, y0, y1))
         except DataError as e:
+            return jsonify(error=str(e)), 502
+        except RegionError as e:
             return jsonify(error=str(e)), 502
         except AnalysisError as e:
             return jsonify(error=str(e)), 422
@@ -94,8 +101,8 @@ def series():
 def region():
     try:
         lat, lon = float(request.args["lat"]), float(request.args["lon"])
-        y0 = max(1981, int(request.args.get("start", 1985)))
-        y1 = min(date.today().year, int(request.args.get("end", date.today().year)))
+        y0 = max(1981, int(request.args.get("start", DEFAULT_START)))
+        y1 = min(date.today().year, int(request.args.get("end", DEFAULT_END)))
     except (KeyError, ValueError):
         return jsonify(error="Provide valid lat, lon, start and end."), 400
     if not (math.isfinite(lat) and math.isfinite(lon) and -90 <= lat <= 90):

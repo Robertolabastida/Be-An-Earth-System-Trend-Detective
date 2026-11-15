@@ -59,7 +59,6 @@ details.grp>summary,details.res>summary{display:flex;align-items:center;justify-
 .badge.err{background:rgba(255,180,168,.15);color:#ffb4a8}
 #reopen{margin-top:10px;width:100%;background:var(--panel);border:1px solid var(--edge);border-radius:999px;color:var(--text)}
 details{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}summary{cursor:pointer;font-weight:600}
-#demo-list{display:grid;gap:6px}.demo{text-align:left}.demo small{display:block;color:var(--muted)}
 
 #out{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
 .note{color:var(--muted);font-size:.82rem;line-height:1.45}
@@ -78,12 +77,13 @@ dt{color:var(--muted);cursor:help}dd{margin:0;text-align:right;font-weight:600}
 #map-tools{position:fixed;right:14px;top:14px;display:flex;flex-direction:column;gap:6px;z-index:3}
 #map-tools button{width:40px;height:40px;padding:0;font-size:1.2rem;background:var(--panel);border:1px solid var(--edge);border-radius:50%;color:var(--edge)}
 #map-tools button:hover{background:#0f4fb8}
+#map-tools button[aria-expanded=true]{background:var(--edge);color:#04203f}
 
 #status{position:fixed;right:64px;top:22px;z-index:3;font-size:.78rem;color:var(--muted);background:var(--panel);border:1px solid var(--edge);border-radius:99px;padding:4px 12px;display:none}
 
 /* Climate Atlas window (charts for the selected place) */
-#data-btn{display:grid;place-items:center}
-#data-btn svg{width:20px;height:20px;display:block}
+#data-btn,#layers-btn{display:grid;place-items:center}
+#data-btn svg,#layers-btn svg{width:20px;height:20px;display:block}
 #data{position:fixed;left:440px;right:68px;top:14px;bottom:34px;z-index:3;overflow-y:auto;padding:16px}
 #data[hidden]{display:none}
 .dhead{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -94,23 +94,40 @@ dt{color:var(--muted);cursor:help}dd{margin:0;text-align:right;font-weight:600}
 .tab[aria-selected=true]{background:var(--edge);color:#04203f;font-weight:600}
 #data-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px;margin-top:10px}
 .fig{margin:0;padding:10px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.04);min-width:0}
-.fig img{display:block;width:100%;height:auto;border-radius:6px;background:#fff;cursor:zoom-in}
 .fig figcaption{margin-top:8px;line-height:1.35}
 .fig figcaption b{display:block;font-size:.9rem}
 .fig figcaption small{display:block;color:var(--muted);font-size:.72rem;overflow-wrap:anywhere}
 .plotbox{position:relative;height:240px}
-.plotbox.tbl{height:auto;max-height:240px;overflow:auto}
-.plotbox table{border-collapse:collapse;font-size:.75rem;width:100%}
-.plotbox th,.plotbox td{padding:3px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
-.plotbox th{position:sticky;top:0;background:var(--panel)}
-#lightbox{position:fixed;inset:0;z-index:10;display:grid;place-items:center;background:rgba(2,10,30,.92);cursor:zoom-out}
-#lightbox[hidden]{display:none}
-#lightbox img{max-width:94vw;max-height:92vh;background:#fff;border-radius:8px}
+
+/* Map layers selector (inspired by the map-type picker of online maps) */
+#layers{position:fixed;right:68px;bottom:34px;z-index:5;width:min(470px,calc(100vw - 90px));padding:12px 14px 14px}
+#layers[hidden]{display:none}
+.lhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.lhead b{font-family:Fraunces,serif;font-size:1.05rem}
+#layers-close{flex:none;width:30px;height:30px;padding:0;font-size:1.1rem;line-height:1;border-radius:99px;border-color:var(--edge);color:var(--edge)}
+#layer-tiles{display:flex;flex-wrap:wrap;gap:10px 8px}
+.ltile{display:flex;flex-direction:column;align-items:center;gap:6px;width:78px;padding:0;background:none;border:0;border-radius:12px}
+.ltile:hover{background:none}
+.ltile .sw{width:64px;height:64px;border-radius:12px;border:2px solid transparent;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
+.ltile:hover .sw{border-color:rgba(79,209,255,.5)}
+.ltile[aria-checked=true] .sw{border-color:var(--cyan)}
+.ltile .lb{font-size:.72rem;color:var(--muted);text-align:center;line-height:1.15}
+.ltile[aria-checked=true] .lb{color:var(--text);font-weight:600}
+.lctl{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap}
+.lctl label{flex:1;min-width:140px;font-size:.78rem;color:var(--muted)}
+.lctl input{width:100%;margin-top:4px}
+.lctl input[type=range]{padding:0;accent-color:var(--cyan);background:none;border:0}
+#legend{margin-top:12px}
+#legend[hidden]{display:none}
+#legend-bar{height:10px;border-radius:99px}
+.lrow{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-top:4px}
+#ov-note{margin:10px 0 0}
 
 @media(max-width:760px){
   #left{left:8px;right:62px;top:8px;width:auto}
   #panel{max-height:60vh}
   #data{left:8px;right:8px;top:8px;bottom:8px;z-index:6}
+  #layers{right:8px;left:8px;width:auto;bottom:8px;z-index:7}
 }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -139,16 +156,10 @@ dt{color:var(--muted);cursor:help}dd{margin:0;text-align:right;font-weight:600}
 
       <h2>2. Choose a period</h2>
       <div class="row">
-        <label>From <input type="number" id="y0" value="1985" min="1981" max="2026"></label>
-        <label>To <input type="number" id="y1" value="2026" min="1981" max="2026"></label>
+        <label>From <input type="number" id="y0" value="2003" min="1981" max="2026"></label>
+        <label>To <input type="number" id="y1" value="2025" min="1981" max="2026"></label>
         <button id="run">Analyze</button>
       </div>
-
-      <details id="demos">
-        <summary>Explore Scientific Discoveries</summary>
-        <p class="note">One-click investigations. All use real data (reanalysis or satellite analysis), not simulations.</p>
-        <div id="demo-list"></div>
-      </details>
 
       <section id="out" aria-live="polite">
         <p id="hint" class="note">Choose at least one variable above to see its data here.</p>
@@ -161,11 +172,28 @@ dt{color:var(--muted);cursor:help}dd{margin:0;text-align:right;font-weight:600}
     <button id="zin" aria-label="Zoom in">+</button>
     <button id="zout" aria-label="Zoom out">−</button>
     <button id="reset" aria-label="Center the globe">⟲</button>
+    <button id="layers-btn" aria-label="Map layers" aria-expanded="false" title="Map layers: temperature gradient and more">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 16 9 5 9-5"/></svg>
+    </button>
     <button id="data-btn" aria-label="Climate Atlas" title="Climate Atlas: charts for the selected place">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>
     </button>
   </div>
   <div id="status" role="status"></div>
+
+  <section id="layers" class="card" aria-label="Map layers" hidden>
+    <div class="lhead"><b>Map layers</b><button id="layers-close" aria-label="Close map layers" title="Close">×</button></div>
+    <div id="layer-tiles" role="radiogroup" aria-label="Map layer"></div>
+    <div class="lctl">
+      <label>Opacity <input type="range" id="ov-alpha" min="20" max="100" value="75"></label>
+      <label>Date (empty = latest) <input type="date" id="ov-date" min="2003-01-01"></label>
+    </div>
+    <div id="legend" hidden>
+      <div id="legend-bar"></div>
+      <div class="lrow"><span id="lg-lo"></span><span id="lg-hi"></span></div>
+    </div>
+    <p id="ov-note" class="note"></p>
+  </section>
 
   <section id="data" class="card" aria-label="Climate Atlas" hidden>
     <div class="dhead"><h2 id="data-title">Climate Atlas</h2><button id="data-close" aria-label="Close Climate Atlas" title="Close">×</button></div>
@@ -173,7 +201,6 @@ dt{color:var(--muted);cursor:help}dd{margin:0;text-align:right;font-weight:600}
     <p id="data-note" class="note"></p>
     <div id="data-grid"></div>
   </section>
-  <div id="lightbox" hidden><img alt=""></div>
 
   <script>
 "use strict";
@@ -245,6 +272,70 @@ function fly(opts) {
 $("zin").onclick = () => viewer.camera.zoomIn(viewer.camera.positionCartographic.height * 0.4);
 $("zout").onclick = () => viewer.camera.zoomOut(viewer.camera.positionCartographic.height * 0.6);
 $("reset").onclick = () => fly({ destination: HOME, duration: 1.5 });
+
+// ---------- Map layers: worldwide gradients painted on the globe (NASA GIBS) ----------
+// Swatches are illustrative colour ramps. The exact scales are published by NASA Worldview.
+const OVERLAYS = [
+  { id: "lst", name: "Land temperature", layer: "MODIS_Terra_Land_Surface_Temp_Day", level: 7, lo: "Cooler", hi: "Hotter",
+    grad: "linear-gradient(90deg,#2b3a9e,#2fa4d8,#7bd36b,#f6e04a,#f08a2b,#c0262d)",
+    note: "Daytime land surface temperature from MODIS on Terra. Land only; clouds leave gaps." },
+  { id: "air", name: "Air temperature", layer: "AIRS_L3_Surface_Air_Temperature_Daily_Day", level: 6, lo: "Cooler", hi: "Hotter",
+    grad: "linear-gradient(90deg,#4b2d8f,#2f7fd0,#58c7c0,#f2e35a,#ef8a2b,#b3202a)",
+    note: "Near-surface air temperature from AIRS on Aqua (daytime). Orbit gaps may appear." },
+  { id: "sst", name: "Sea temperature", layer: "GHRSST_L4_MUR_Sea_Surface_Temperature", level: 7, lo: "Colder", hi: "Warmer",
+    grad: "linear-gradient(90deg,#1a2a8c,#2a7bd1,#37c1c8,#f4e55a,#f08a2b,#c0262d)",
+    note: "Sea surface temperature (GHRSST MUR, about 1 km). Ocean only." },
+  { id: "rain", name: "Precipitation", layer: "IMERG_Precipitation_Rate", level: 6, lo: "Light", hi: "Heavy",
+    grad: "linear-gradient(90deg,#9ad8ff,#3d8be0,#2fc16b,#f6e04a,#f08a2b,#c0262d)",
+    note: "Precipitation rate from NASA IMERG (GPM). The latest layer shows the current rain rate." },
+  { id: "ndvi", name: "Vegetation", layer: "MODIS_Terra_NDVI_8Day", level: 9, lo: "Sparse", hi: "Dense",
+    grad: "linear-gradient(90deg,#8b6b3d,#c9b46a,#b6d36a,#4fa84a,#17642c)",
+    note: "Vegetation greenness (NDVI, 8-day composite, MODIS on Terra)." },
+  { id: "aod", name: "Aerosols", layer: "MODIS_Terra_Aerosol_Optical_Depth", level: 6, lo: "Clean air", hi: "Heavy haze",
+    grad: "linear-gradient(90deg,#3f8fd6,#7bd36b,#f6e04a,#f08a2b,#8a1c1c)",
+    note: "Aerosol optical depth: dust, smoke and haze in the air (MODIS on Terra)." },
+  { id: "snow", name: "Snow cover", layer: "MODIS_Terra_NDSI_Snow_Cover", level: 8, lo: "Thin", hi: "Full snow",
+    grad: "linear-gradient(90deg,#14307a,#4d8be0,#a9d5ff,#ffffff)",
+    note: "Snow cover from MODIS on Terra. Polar night and clouds leave gaps." },
+];
+const BASE_TILE = { id: "none", name: "Base map", grad: "linear-gradient(160deg,#0b3d91,#2f7fc1 45%,#4f8f4a 72%,#c9b27a)" };
+let OV = "none", OVL = null;
+$("ov-date").max = new Date().toISOString().slice(0, 10);
+
+function drawLayerTiles() {
+  $("layer-tiles").innerHTML = [BASE_TILE, ...OVERLAYS].map((o) =>
+    `<button class="ltile" type="button" role="radio" aria-checked="${o.id === OV}" data-id="${o.id}">
+       <span class="sw" style="background:${o.grad}"></span><span class="lb">${esc(o.name)}</span></button>`).join("");
+  $("layer-tiles").querySelectorAll(".ltile").forEach((b) => (b.onclick = () => setOverlay(b.dataset.id)));
+}
+
+function setOverlay(id) {
+  if (OVL) { L.remove(OVL, true); OVL = null; }
+  OV = id;
+  const o = OVERLAYS.find((x) => x.id === id);
+  $("legend").hidden = !o;
+  $("ov-note").textContent = o ? o.note + " If the map looks empty, no data exist for that date: pick another." : "Choose a layer to paint a worldwide gradient on the globe.";
+  if (o) {
+    const matrix = "GoogleMapsCompatible_Level" + o.level, day = $("ov-date").value || "default";
+    OVL = L.addImageryProvider(new Cesium.WebMapTileServiceImageryProvider({
+      url: `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${o.layer}/default/${day}/${matrix}/{TileMatrix}/{TileRow}/{TileCol}.png`,
+      layer: o.layer, style: "default", format: "image/png", tileMatrixSetID: matrix, maximumLevel: o.level,
+      tileWidth: 256, tileHeight: 256, tilingScheme: new Cesium.WebMercatorTilingScheme(), credit: "NASA GIBS · " + o.name,
+    }));
+    OVL.alpha = $("ov-alpha").value / 100;
+    $("legend-bar").style.background = o.grad;
+    $("lg-lo").textContent = o.lo; $("lg-hi").textContent = o.hi;
+  }
+  drawLayerTiles();
+}
+function toggleLayers(open) {
+  $("layers").hidden = !open; $("layers-btn").setAttribute("aria-expanded", String(open));
+}
+$("layers-btn").onclick = () => toggleLayers($("layers").hidden);
+$("layers-close").onclick = () => toggleLayers(false);
+$("ov-alpha").oninput = () => { if (OVL) OVL.alpha = $("ov-alpha").value / 100; };
+$("ov-date").onchange = () => { if (OV !== "none") setOverlay(OV); };
+drawLayerTiles(); setOverlay("none");
 
 // ---------- Click on the globe ----------
 new Cesium.ScreenSpaceEventHandler(scene.canvas).setInputAction((c) => {
@@ -328,15 +419,22 @@ $("search").onsubmit = async (e) => {
 
 // ---------- Variables, divided into sections the user can pick from ----------
 let defaultsApplied = false;
-const groupOf = (v) => (v.ocean_only ? "Ocean" : "Atmosphere");
-const GROUP_NOTE = { Atmosphere: "Air temperature and rainfall at the marked point.", Ocean: "Sea surface conditions. Only works over ocean points." };
+const GROUP_ORDER = ["Atmosphere", "Water Cycle", "Land & Soil", "Ocean"];
+const GROUP_NOTE = {
+  "Atmosphere": "Air temperature, rainfall, pressure, wind and sunlight at the marked point.",
+  "Water Cycle": "Humidity and evapotranspiration at the marked point.",
+  "Land & Soil": "Surface and soil temperature and soil moisture. Land points only.",
+  "Ocean": "Sea surface conditions. Only works over ocean points.",
+};
+const groupOf = (v) => v.group || (v.ocean_only ? "Ocean" : "Atmosphere");
 fetch("/api/variables").then((r) => r.json()).then((l) => { VARS = l; drawVars(); });
 
 function drawVars() {
   const groups = {};
   VARS.forEach((v) => (groups[groupOf(v)] = groups[groupOf(v)] || []).push(v));
-  $("vars").innerHTML = Object.entries(groups).map(([g, list]) => `
-    <details class="grp" open>
+  const entries = Object.entries(groups).sort((a, b) => GROUP_ORDER.indexOf(a[0]) - GROUP_ORDER.indexOf(b[0]));
+  $("vars").innerHTML = entries.map(([g, list], gi) => `
+    <details class="grp" ${gi === 0 ? "open" : ""}>
       <summary><b>${esc(g)}</b><span class="count"></span></summary>
       <p class="note">${esc(GROUP_NOTE[g] || "")}</p>
       ${list.map((v) => `<label class="var" title="${esc(v.explain)} ${esc(v.meaning)}"><input type="checkbox" data-id="${esc(v.id)}">
@@ -350,9 +448,10 @@ function drawVars() {
     ids.forEach((id) => (all ? SEL.delete(id) : SEL.add(id)));
     syncVars(); refresh();
   }));
-  if (!SEL.size && !defaultsApplied) {       // first load: start with the first section selected so charts show right away
+  if (!SEL.size && !defaultsApplied) {       // first load: air temperature and precipitation so charts show right away
     defaultsApplied = true;
-    (Object.values(groups)[0] || []).forEach((v) => SEL.add(v.id));
+    ["t2m", "precip"].forEach((id) => VARS.some((v) => v.id === id) && SEL.add(id));
+    if (!SEL.size) (entries[0] ? entries[0][1] : []).slice(0, 2).forEach((v) => SEL.add(v.id));
   }
   syncVars(); refresh();
 }
@@ -365,20 +464,6 @@ function syncVars() {
   });
 }
 $("run").onclick = () => (pick ? run() : flash("Select a location first: click the globe or search for a place."));
-
-// ---------- Demos (real data; text describes the question, results come from the live analysis) ----------
-const DEMOS = [
-  { t: "Is the Arctic warming?", why: "The Arctic is a sensitive region for climate change.", v: "t2m", lat: 78, lon: 15, a: 1985, b: 2026, n: "Arctic (Svalbard)" },
-  { t: "Ocean temperature in the eastern tropical Pacific", why: "Sea temperature shapes El Niño and marine ecosystems.", v: "sst", lat: 0, lon: -120, a: 1985, b: 2026, n: "Eastern tropical Pacific" },
-  { t: "Rainfall over the Amazon", why: "Amazon rainfall supports one of Earth's largest forests.", v: "precip", lat: -3.1, lon: -60, a: 1985, b: 2026, n: "Amazon basin" },
-];
-$("demo-list").innerHTML = DEMOS.map((d, i) => `<button class="demo" data-i="${i}">${esc(d.t)}<small>${esc(d.why)}</small></button>`).join("");
-$("demo-list").querySelectorAll(".demo").forEach((b) => (b.onclick = () => {
-  const d = DEMOS[+b.dataset.i];
-  SEL = new Set([d.v]); syncVars();
-  $("y0").value = d.a; $("y1").value = d.b;
-  setPick(d.lat, d.lon, { name: d.n, fly: true });
-}));
 
 // ---------- Analysis: one collapsible card per selected variable ----------
 function run() {                       // new place or period: start over with the selected variables
@@ -503,7 +588,10 @@ function destroyDataCharts() { DCH.forEach((c) => c.destroy()); DCH = []; }
 function closeData() { $("data").hidden = true; }
 $("data-close").onclick = closeData;
 $("data-btn").onclick = () => { if ($("data").hidden) { $("data").hidden = false; loadRegion(); } else closeData(); };
-document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("data").hidden) closeData(); });
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  if (!$("layers").hidden) toggleLayers(false); else if (!$("data").hidden) closeData();
+});
 
 async function loadRegion() {
   if ($("data").hidden) return;

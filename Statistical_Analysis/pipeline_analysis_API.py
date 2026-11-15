@@ -56,7 +56,7 @@ def fetch_nasa_api_data(min_lat, max_lat, min_lon, max_lon, start_year, end_year
 
 # --- PHASE 2: SCREENING AND STATISTICAL ANALYSIS ---
 def analyze_climate_trends(min_lat, max_lat, min_lon, max_lon, start_year, end_year, directory=".", top_n=5):
-    figures_dir = os.path.join(directory, "Figures")
+    figures_dir = os.path.join(directory, "Figures_API")
     if os.path.exists(figures_dir):
         for file in glob.glob(os.path.join(figures_dir, "*.*")):
             os.remove(file)

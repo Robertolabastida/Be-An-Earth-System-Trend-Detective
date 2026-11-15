@@ -298,4 +298,4 @@ if __name__ == "__main__":
     print("Template in use:", os.path.join(app.root_path, "templates", "gt.html"))
     for k, v in DATA_ROOTS.items():
         print(f"Data folder [{k}]:", v, "(found)" if os.path.isdir(v) else "(NOT found)")
-    app.run(debug=os.environ.get("FLASK_DEBUG") == "1", port=5001)
+    app.run(debug=os.environ.get("FLASK_DEBUG") == "1", port=5000)

@@ -88,7 +88,7 @@ dt{color:var(--muted);cursor:help}dd{margin:0;text-align:right;font-weight:600}
 #data[hidden]{display:none}
 .dhead{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .dhead h2{margin:0;font-family:Fraunces,serif;font-size:1.3rem;color:var(--text)}
-#data-close{flex:none;width:32px;height:32px;padding:0;font-size:1.2rem;line-height:1;border-radius:99px;border-color:var(--edge);color:var(--edge)}
+#data-close,#help-close,#nn-close{flex:none;width:32px;height:32px;padding:0;font-size:1.2rem;line-height:1;border-radius:99px;border-color:var(--edge);color:var(--edge)}
 #data-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 6px}
 .tab{border-radius:999px;padding:6px 14px;border-color:var(--edge)}
 .tab[aria-selected=true]{background:var(--edge);color:#04203f;font-weight:600}
@@ -132,10 +132,60 @@ dt{color:var(--muted);cursor:help}dd{margin:0;text-align:right;font-weight:600}
 .lrow{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-top:4px}
 #ov-note{margin:10px 0 0}
 
+/* Help ("?") and Neural network windows */
+#help,#nn{position:fixed;left:440px;right:68px;top:14px;bottom:34px;z-index:3;overflow-y:auto;padding:18px 22px 26px}
+#help[hidden],#nn[hidden]{display:none}
+#help-btn{font-family:Fraunces,serif;font-weight:600;font-size:1.35rem!important}
+#nn-btn svg{width:23px;height:23px;display:block}
+#nn-btn,#help-btn{display:grid;place-items:center}
+.doc{max-width:880px;margin:6px 0 0}
+.doc h1{font-family:Fraunces,serif;font-size:1.55rem;line-height:1.2;margin:14px 0 4px}
+.doc h2{font-family:Fraunces,serif;font-size:1.15rem;margin:24px 0 8px;color:var(--text)}
+.doc h3{font-size:.95rem;margin:16px 0 6px;color:var(--cyan)}
+.doc p,.doc li{font-size:.9rem;line-height:1.6;color:var(--text);margin:6px 0}
+.doc ul{padding-left:20px;margin:8px 0}
+.doc a{color:var(--cyan);overflow-wrap:anywhere}
+.doc .flow{display:inline-block;margin:4px 0 2px;padding:6px 12px;border-radius:99px;background:rgba(79,209,255,.14);border:1px solid var(--line);font-weight:600;font-size:.84rem}
+.doc .qa b{display:block;margin-top:6px}
+#nn-canvas{display:block;width:100%;height:230px;margin-top:12px;border-radius:12px;border:1px solid var(--line);
+  background:radial-gradient(120% 140% at 8% 20%,rgba(20,200,170,.35),rgba(11,61,145,0) 45%),linear-gradient(135deg,#031a4d,#052a75 55%,#06214f)}
+.leg{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:10px 0}
+.leg>div{padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.04)}
+.leg b{display:flex;align-items:center;gap:8px;font-size:.9rem}
+.leg small{display:block;color:var(--muted);margin-top:2px}
+.sw2{width:26px;height:0;border-top:3px solid;display:inline-block}
+.hz{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:10px}
+.hcard{display:block;text-align:left;padding:16px 18px;border-radius:14px;border:1px solid var(--line);background:rgba(110,231,168,.12)}
+.hcard.h12{background:rgba(79,209,255,.14)}
+.hcard:hover{border-color:var(--cyan)}
+.hcard[aria-pressed=true]{border-color:var(--cyan);box-shadow:0 0 0 2px rgba(79,209,255,.4)}
+.hcard small{display:block;color:var(--muted)}
+.hcard .big{display:block;font-family:Fraunces,serif;font-size:1.9rem;line-height:1.1;margin:6px 0}
+#fbox{margin-top:16px}
+#fbox[hidden]{display:none}
+.fhead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.fhead h3{margin:0;font-family:Fraunces,serif;font-size:1.2rem;color:var(--text)}
+.fhead small{color:var(--muted)}
+.vchips{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:12px 0}
+.vchip{text-align:center;padding:10px 8px;border-radius:10px;font-size:.84rem}
+.vchip[aria-pressed=true]{background:var(--edge);color:#04203f;font-weight:600;border-color:var(--edge)}
+.fshow{margin:0;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.04)}
+.fshow img,.fgrid img{display:block;width:100%;border-radius:8px;background:#fff;cursor:zoom-in}
+.fshow img{max-width:680px;margin:0 auto}
+.fshow figcaption,.fgrid figcaption{margin-top:10px;line-height:1.45}
+.fshow figcaption b,.fgrid figcaption b{display:block;font-size:.95rem}
+.fshow figcaption span,.fgrid figcaption span{display:block;color:var(--muted);font-size:.84rem;margin-top:3px}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.fgrid figure{margin:0;padding:10px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.04);min-width:0}
+.ftools{display:flex;justify-content:flex-end;margin:0 0 8px}
+#lightbox{position:fixed;inset:0;z-index:10;display:grid;place-items:center;background:rgba(2,10,30,.92);cursor:zoom-out}
+#lightbox[hidden]{display:none}
+#lightbox img{max-width:94vw;max-height:92vh;background:#fff;border-radius:8px}
+
 @media(max-width:760px){
   #left{left:8px;right:62px;top:8px;width:auto}
   #panel{max-height:60vh}
-  #data{left:8px;right:8px;top:8px;bottom:8px;z-index:6}
+  #data,#help,#nn{left:8px;right:8px;top:8px;bottom:8px;z-index:6}
   #layers{right:8px;left:8px;width:auto;bottom:8px;z-index:7}
   #layers.min{width:auto}
 }
@@ -188,6 +238,13 @@ dt{color:var(--muted);cursor:help}dd{margin:0;text-align:right;font-weight:600}
     <button id="data-btn" aria-label="Climate Atlas" title="Climate Atlas: charts for the selected place">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>
     </button>
+    <button id="help-btn" aria-label="How to use this page" aria-expanded="false" title="How to use this page">?</button>
+    <button id="nn-btn" aria-label="How the neural network works" aria-expanded="false" title="Neural network and forecasts">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" aria-hidden="true">
+        <path d="M4 6 12 4M4 6l8 8M4 6l8 14M4 18 12 4M4 18l8 8M4 18l8 2M12 4l8 4M12 4l8 8M12 12l8-4M12 12l8 4M12 20l8-4M12 20l8-12" opacity=".8"/>
+        <g fill="currentColor" stroke="none"><circle cx="4" cy="6" r="2"/><circle cx="4" cy="18" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="20" r="2"/><circle cx="20" cy="8" r="2"/><circle cx="20" cy="16" r="2"/></g>
+      </svg>
+    </button>
   </div>
   <div id="status" role="status"></div>
 
@@ -227,6 +284,81 @@ dt{color:var(--muted);cursor:help}dd{margin:0;text-align:right;font-weight:600}
     <p id="data-note" class="note"></p>
     <div id="data-grid"></div>
   </section>
+
+  <section id="help" class="card" aria-label="How to use this page" hidden>
+    <div class="dhead"><h2>How to use this page</h2><button id="help-close" aria-label="Close help" title="Close">×</button></div>
+    <article class="doc">
+      <h1>BE AN EARTH SYSTEM TREND DETECTIVE</h1>
+
+      <h2>1. Introduction</h2>
+      <p>EarthTrend AI explores environmental and climate data to identify long-term trends and changes across different regions of the world.</p>
+
+      <h2>2. Databases</h2>
+      <p>The project uses NASA and NOAA Earth observation datasets:</p>
+      <ul>
+        <li><b>GPM IMERG:</b> Precipitation.</li>
+        <li><b>MERRA-2 / NASA POWER:</b> Atmospheric variables.</li>
+        <li><b>MODIS:</b> Vegetation, land surface temperature, evapotranspiration, and productivity.</li>
+        <li><b>GLDAS:</b> Soil moisture, temperature, and water cycle variables.</li>
+        <li><b>NOAA OISST:</b> Sea surface temperature.</li>
+      </ul>
+
+      <h2>3. Analysis</h2>
+      <ul>
+        <li><b>Time Series:</b> Visualize environmental changes over time.</li>
+        <li><b>Linear Regression:</b> Estimate trends, slopes, and statistical significance.</li>
+        <li><b>Statistical Tests:</b> Mann-Kendall, Seasonal Mann-Kendall, and stationarity analysis.</li>
+        <li><b>Heat Maps:</b> Explore spatial distributions of environmental variables.</li>
+        <li><b>Interactive Globe:</b> Select locations and explore available data.</li>
+      </ul>
+
+      <h2>4. Frequently Asked Questions</h2>
+      <div class="qa">
+        <b>How do I select a location?</b>
+        <p>Search for a place or click directly on the interactive 3D globe.</p>
+      </div>
+
+      <h2>5. Contact</h2>
+      <p><b>Location:</b> Ensenada, Baja California, Mexico<br>
+         <b>Email:</b> <a href="mailto:g16_medina@ens.cnyn.unam.mx">g16_medina@ens.cnyn.unam.mx</a><br>
+         <b>GitHub:</b> <a href="https://github.com/Robertolabastida/Be-An-Earth-System-Trend-Detective" target="_blank" rel="noopener noreferrer">https://github.com/Robertolabastida/Be-An-Earth-System-Trend-Detective</a></p>
+
+      <h2>6. Team Members</h2>
+      <p>Carolina Valdivia, Diego Noriega, Roberto Garcés, Ximena León, Emanuel Medina, and Angel Acevedo.</p>
+    </article>
+  </section>
+
+  <section id="nn" class="card" aria-label="Neural network overview" hidden>
+    <div class="dhead"><h2>Neural Network Overview</h2><button id="nn-close" aria-label="Close neural network overview" title="Close">×</button></div>
+    <canvas id="nn-canvas" role="img" aria-label="Illustration of a neural network: glowing nodes joined by dotted links"></canvas>
+    <article class="doc">
+      <h1>How does EarthTrend AI work?</h1>
+      <p>EarthTrend AI uses a Temporal Convolutional Network (TCN) to analyze nine environmental variables simultaneously. By processing historical observations of soil, water, and atmospheric conditions, the network learns temporal patterns and relationships within the environmental system. These patterns are used to forecast the future evolution of each variable across two prediction horizons: one month and twelve months.</p>
+      <p>Unlike approaches that analyze each variable independently, EarthTrend AI integrates multiple environmental signals to generate a multivariable forecast.</p>
+
+      <h2>Two prediction horizons</h2>
+      <h3>One-Month Prediction</h3>
+      <p>The network analyzes the previous 36 months of environmental observations to predict the following month. This short-term forecast evaluates the model's ability to anticipate near-future changes in the environmental system.</p>
+      <span class="flow">36 months of historical data → 1 month forecast</span>
+
+      <h3>Twelve-Month Prediction</h3>
+      <p>The network analyzes the previous 24 months of environmental observations to predict the evolution of all nine variables over the following twelve months. This horizon evaluates its ability to capture longer-term temporal patterns and seasonal variations.</p>
+      <span class="flow">24 months of historical data → 12 month forecast</span>
+
+      <h2>Understanding the predictions</h2>
+      <p>Each graph compares observed environmental data with the predictions generated by the TCN ensemble.</p>
+      <div class="leg">
+        <div><b><span class="sw2" style="border-color:#1f77b4"></span>Observed Data</b><small>Historical measurements</small></div>
+        <div><b><span class="sw2" style="border-color:#ff7f0e;border-top-style:dashed"></span>TCN Predictions</b><small>Neural network forecasts</small></div>
+      </div>
+      <p>The closer the predicted curve follows the observed values, the more accurately the model reproduces the variable's temporal behavior.</p>
+
+      <h2>Explore the Forecasts</h2>
+      <div class="hz" id="hz"></div>
+      <div id="fbox" hidden></div>
+    </article>
+  </section>
+  <div id="lightbox" hidden><img alt=""></div>
 
   <script>
 "use strict";
@@ -676,10 +808,12 @@ let REGION = null, TAB = null, DCH = [], dgen = 0;
 function destroyDataCharts() { DCH.forEach((c) => c.destroy()); DCH = []; }
 function closeData() { $("data").hidden = true; }
 $("data-close").onclick = closeData;
-$("data-btn").onclick = () => { if ($("data").hidden) { $("data").hidden = false; loadRegion(); } else closeData(); };
+$("data-btn").onclick = () => { if ($("data").hidden) { showWin("data"); loadRegion(); } else closeData(); };
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
-  if (!$("layers").hidden) toggleLayers(false); else if (!$("data").hidden) closeData();
+  if (!$("lightbox").hidden) $("lightbox").hidden = true;
+  else if (!$("layers").hidden) toggleLayers(false);
+  else WINS.forEach((w) => { if (!$(w).hidden) closeWin(w); });
 });
 
 async function loadRegion() {
@@ -763,6 +897,169 @@ function drawRegionChart(cv, it) {
     },
   }));
 }
+
+// ---------- Floating windows: Climate Atlas, "?" help and Neural network (only one open at a time) ----------
+const WINS = ["data", "help", "nn"];
+function showWin(id) {
+  WINS.forEach((w) => ($(w).hidden = w !== id));
+  $("help-btn").setAttribute("aria-expanded", String(id === "help"));
+  $("nn-btn").setAttribute("aria-expanded", String(id === "nn"));
+  if (id === "nn") startNet(); else stopNet();
+  $(id).scrollTop = 0;
+}
+function closeWin(id) {
+  $(id).hidden = true;
+  if (id === "help") $("help-btn").setAttribute("aria-expanded", "false");
+  if (id === "nn") { $("nn-btn").setAttribute("aria-expanded", "false"); stopNet(); }
+}
+$("help-btn").onclick = () => ($("help").hidden ? showWin("help") : closeWin("help"));
+$("nn-btn").onclick = () => ($("nn").hidden ? showWin("nn") : closeWin("nn"));
+$("help-close").onclick = () => closeWin("help");
+$("nn-close").onclick = () => closeWin("nn");
+$("lightbox").onclick = () => ($("lightbox").hidden = true);
+function zoomable(root) {
+  root.querySelectorAll("img").forEach((img) => {
+    img.onclick = () => { $("lightbox").querySelector("img").src = img.src; $("lightbox").hidden = false; };
+    img.onerror = () => img.replaceWith(Object.assign(document.createElement("p"), { className: "err",
+      textContent: "Image not found. Copy the static/forecasts folder next to app.py." }));
+  });
+}
+
+// ---------- Forecasts: 1-month (H1) and 12-month (H12) graphs of the TCN ----------
+// Descriptions come from the project text; each graph compares observed data with the TCN predictions.
+const FVARS = [
+  { id: "soil_temp", chip: "Soil temperature", name: "Soil Temperature (0–10 cm)",
+    h1: "Shows the predicted temperature of the upper soil layer, capturing short-term thermal variations.",
+    h12: "Shows the predicted annual evolution of upper-layer soil temperature, highlighting seasonal thermal patterns." },
+  { id: "soil_moist_surface", chip: "Surface moisture", name: "Soil Moisture (0–10 cm)",
+    h1: "Illustrates expected changes in near-surface soil water content over the following month.",
+    h12: "Illustrates the expected seasonal evolution of water content in the upper soil layer over twelve months." },
+  { id: "soil_moist_deep", chip: "Deep moisture", name: "Soil Moisture (40–100 cm)",
+    h1: "Shows the forecast evolution of water stored in deeper soil layers.",
+    h12: "Presents the forecast evolution of deeper soil water storage, revealing longer-term variations." },
+  { id: "precip", chip: "Precipitation", name: "Monthly Precipitation",
+    h1: "Presents the predicted monthly accumulated precipitation, reflecting expected rainfall conditions.",
+    h12: "Displays the predicted monthly precipitation pattern throughout the forecast year." },
+  { id: "et", chip: "Evapotranspiration", name: "Evapotranspiration",
+    h1: "Shows the expected water loss from the land surface through evaporation and plant transpiration.",
+    h12: "Shows the expected annual evolution of water transfer from the surface to the atmosphere." },
+  { id: "air_temp", chip: "Air temperature", name: "Air Temperature (2 m)",
+    h1: "Illustrates the forecast near-surface atmospheric temperature at two meters above ground.",
+    h12: "Illustrates the predicted annual atmospheric temperature cycle and its seasonal variations." },
+  { id: "spec_hum", chip: "Specific humidity", name: "Specific Humidity (2 m)",
+    h1: "Shows the predicted amount of water vapor per unit mass of air near the surface.",
+    h12: "Presents the expected changes in near-surface atmospheric moisture throughout the forecast period." },
+  { id: "wind_east", chip: "Eastward wind", name: "Eastward Wind (10 m)",
+    h1: "Presents the predicted east–west wind component at ten meters above ground.",
+    h12: "Shows the predicted evolution of the east–west wind component over the next twelve months." },
+  { id: "wind_north", chip: "Northward wind", name: "Northward Wind (10 m)",
+    h1: "Illustrates the forecast north–south wind component at ten meters above ground.",
+    h12: "Illustrates the predicted annual variations in the north–south wind component." },
+];
+const HORIZONS = {
+  h1: { num: "01 · H1", big: "1 Month", sub: "Short-term prediction", label: "One-Month Prediction", cls: "" },
+  h12: { num: "02 · H12", big: "12 Months", sub: "Long-term prediction", label: "Twelve-Month Prediction", cls: "h12" },
+};
+let FH = null, FV = FVARS[0].id, FALL = false;
+
+function drawHorizonCards() {
+  $("hz").innerHTML = Object.entries(HORIZONS).map(([k, h]) =>
+    `<button class="hcard ${h.cls}" type="button" data-h="${k}" aria-pressed="${FH === k}">
+       <small>${esc(h.num)}</small><span class="big">${esc(h.big)}</span><small>${esc(h.sub)}</small></button>`).join("");
+  $("hz").querySelectorAll(".hcard").forEach((b) => (b.onclick = () => {
+    FH = b.dataset.h; drawHorizonCards(); renderForecast();
+    $("fbox").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion:reduce)").matches ? "auto" : "smooth", block: "start" });
+  }));
+}
+
+function renderForecast() {
+  const box = $("fbox");
+  if (!FH) { box.hidden = true; box.innerHTML = ""; return; }
+  const H = HORIZONS[FH], img = (v) => `/static/forecasts/${FH}_${v.id}.png`;
+  const v = FVARS.find((x) => x.id === FV) || FVARS[0];
+  box.hidden = false;
+  box.innerHTML = `
+    <div class="fhead"><h3>${esc(H.big)}</h3><small>${esc(H.label)} · ${esc(H.sub)}</small></div>
+    <div class="vchips" role="group" aria-label="Environmental variables">${FVARS.map((x) =>
+      `<button class="vchip" type="button" data-v="${x.id}" aria-pressed="${!FALL && x.id === v.id}">${esc(x.chip)}</button>`).join("")}</div>
+    <div class="ftools"><button class="mini" id="fall" type="button">${FALL ? "Show one graph at a time" : "Show all 9 graphs"}</button></div>
+    ${FALL
+      ? `<div class="fgrid">${FVARS.map((x) => `<figure><img loading="lazy" src="${img(x)}" alt="${esc(x.name)}: observed data vs TCN predictions, ${esc(H.big)}">
+           <figcaption><b>${esc(x.name)}</b><span>${esc(x[FH])}</span></figcaption></figure>`).join("")}</div>`
+      : `<figure class="fshow"><img src="${img(v)}" alt="${esc(v.name)}: observed data vs TCN predictions, ${esc(H.big)}">
+           <figcaption><b>${esc(v.name)}</b><span>${esc(v[FH])}</span></figcaption></figure>`}
+    <p class="note">Each variable opens its corresponding forecast graph. Click a graph to enlarge it.</p>`;
+  box.querySelectorAll(".vchip").forEach((b) => (b.onclick = () => { FV = b.dataset.v; FALL = false; renderForecast(); }));
+  $("fall").onclick = () => { FALL = !FALL; renderForecast(); };
+  zoomable(box);
+}
+drawHorizonCards();
+
+// ---------- Neural-network illustration (original canvas animation: glowing nodes, dotted links, travelling signals) ----------
+const net = { raf: 0, pts: [], links: [], dust: [], dpr: 1, ready: false, ro: null };
+function netSetup() {
+  let s = 11; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const accent = { 2: "#ff4d6d", 6: "#b46bff", 9: "#ff6b8a", 12: "#8dff6b", 15: "#ff4d6d" };
+  net.pts = Array.from({ length: 18 }, (_, i) => ({ x: 0.08 + 0.84 * rnd(), y: 0.14 + 0.72 * rnd(), r: 6 + 6 * rnd(), ph: rnd() * 6.28, c: accent[i] || "#4fd1ff" }));
+  const seen = new Set(); net.links = [];
+  net.pts.forEach((p, i) => {
+    net.pts.map((q, j) => ({ j, d: (p.x - q.x) ** 2 + (p.y - q.y) ** 2 })).filter((o) => o.j !== i)
+      .sort((a, b) => a.d - b.d).slice(0, 3).forEach((o) => {
+        const k = i < o.j ? i + "-" + o.j : o.j + "-" + i;
+        if (!seen.has(k)) { seen.add(k); net.links.push({ a: i, b: o.j, bend: (rnd() - 0.5) * 0.6, t: rnd(), sp: 0.07 + 0.1 * rnd() }); }
+      });
+  });
+  net.dust = Array.from({ length: 150 }, () => ({ x: rnd(), y: rnd(), r: 0.6 + 1.5 * rnd(), ph: rnd() * 6.28 }));
+  net.ready = true;
+}
+function netResize() {
+  const cv = $("nn-canvas");
+  net.dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cv.width = Math.max(1, Math.round(cv.clientWidth * net.dpr));
+  cv.height = Math.max(1, Math.round(cv.clientHeight * net.dpr));
+}
+function netDraw(t) {
+  const cv = $("nn-canvas"), ctx = cv.getContext("2d"), W = cv.width, H = cv.height, u = net.dpr;
+  ctx.clearRect(0, 0, W, H);
+  const P = (i) => [net.pts[i].x * W, net.pts[i].y * H];
+  const ctrl = (l) => { const [x1, y1] = P(l.a), [x2, y2] = P(l.b); return [(x1 + x2) / 2 - (y2 - y1) * l.bend, (y1 + y2) / 2 + (x2 - x1) * l.bend]; };
+  const at = (p0, c, p1, k) => [(1 - k) ** 2 * p0[0] + 2 * (1 - k) * k * c[0] + k * k * p1[0], (1 - k) ** 2 * p0[1] + 2 * (1 - k) * k * c[1] + k * k * p1[1]];
+  net.dust.forEach((d) => {                                   // faint particles
+    ctx.globalAlpha = 0.25 + 0.5 * Math.abs(Math.sin(t * 0.0008 + d.ph));
+    ctx.fillStyle = "#7fd4ff"; ctx.beginPath(); ctx.arc(d.x * W, d.y * H, d.r * u, 0, 6.283); ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+  ctx.lineCap = "round"; ctx.strokeStyle = "rgba(120,200,255,.6)"; ctx.lineWidth = 1.6 * u; ctx.setLineDash([1.5 * u, 7 * u]);
+  net.links.forEach((l) => { const a = P(l.a), b = P(l.b), c = ctrl(l); ctx.beginPath(); ctx.moveTo(...a); ctx.quadraticCurveTo(...c, ...b); ctx.stroke(); });
+  ctx.setLineDash([]);
+  net.links.forEach((l) => {                                  // signals travelling along the links
+    const k = (l.t + t * 0.001 * l.sp) % 1, [x, y] = at(P(l.a), ctrl(l), P(l.b), k);
+    ctx.shadowColor = "#4fd1ff"; ctx.shadowBlur = 12 * u; ctx.fillStyle = "#e9f8ff";
+    ctx.beginPath(); ctx.arc(x, y, 2.2 * u, 0, 6.283); ctx.fill();
+  });
+  net.pts.forEach((p) => {                                    // nodes
+    const x = p.x * W, y = p.y * H, r = p.r * u, pulse = 0.5 + 0.5 * Math.sin(t * 0.002 + p.ph);
+    const halo = ctx.createRadialGradient(x, y, r * 0.6, x, y, r * (2.2 + pulse));
+    halo.addColorStop(0, p.c + "66"); halo.addColorStop(1, p.c + "00");
+    ctx.shadowBlur = 0; ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(x, y, r * (2.2 + pulse), 0, 6.283); ctx.fill();
+    ctx.shadowColor = p.c; ctx.shadowBlur = 16 * u;
+    ctx.fillStyle = "rgba(4,22,70,.92)"; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill();
+    ctx.lineWidth = 2.6 * u; ctx.strokeStyle = p.c; ctx.stroke();
+    if (p.c !== "#4fd1ff") { ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(x, y, r * 0.38, 0, 6.283); ctx.fill(); }
+  });
+  ctx.shadowBlur = 0;
+}
+function netLoop(t) { netDraw(t); net.raf = requestAnimationFrame(netLoop); }
+function startNet() {
+  if (!net.ready) netSetup();
+  netResize(); stopNet();
+  if (matchMedia("(prefers-reduced-motion:reduce)").matches) netDraw(0); else net.raf = requestAnimationFrame(netLoop);
+  if (!net.ro && window.ResizeObserver) {
+    net.ro = new ResizeObserver(() => { if (!$("nn").hidden) { netResize(); if (!net.raf) netDraw(0); } });
+    net.ro.observe($("nn-canvas"));
+  }
+}
+function stopNet() { if (net.raf) cancelAnimationFrame(net.raf); net.raf = 0; }
 </script>
 </body>
 </html>

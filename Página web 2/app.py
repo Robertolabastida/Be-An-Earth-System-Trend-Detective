@@ -10,6 +10,15 @@ from data_sources import VARIABLES, DataError, fetch_monthly
 
 app = Flask(__name__)
 CACHE, TTL = {}, 6 * 3600
+app.config["TEMPLATES_AUTO_RELOAD"] = True      # relee gt.html en cada visita
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0     # sin caché para gt.css y gt.js
+
+@app.after_request
+def no_cache(resp):
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
+
+print("Plantilla en uso:", os.path.join(app.root_path, "templates", "gt.html"))
 
 
 @app.route("/")
@@ -62,4 +71,4 @@ def series():
 
 
 if __name__ == "__main__":
-    app.run(debug=os.environ.get("FLASK_DEBUG") == "1", port=5000)
+    app.run(debug=os.environ.get("FLASK_DEBUG") == "1", port=5001)

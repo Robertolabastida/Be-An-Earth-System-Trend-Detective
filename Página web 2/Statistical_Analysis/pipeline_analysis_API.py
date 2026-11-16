@@ -9,7 +9,7 @@ from statsmodels.tsa.stattools import adfuller
 import matplotlib.pyplot as plt
 import json
 
-# --- PHASE 1: DATA EXTRACTION ---
+
 def fetch_nasa_api_data(min_lat, max_lat, min_lon, max_lon, start_year, end_year):
     center_lat = round((min_lat + max_lat) / 2.0, 4)
     center_lon = round((min_lon + max_lon) / 2.0, 4)
@@ -54,7 +54,7 @@ def fetch_nasa_api_data(min_lat, max_lat, min_lon, max_lon, start_year, end_year
         
     return loaded_data, None
 
-# --- PHASE 2: SCREENING AND STATISTICAL ANALYSIS ---
+
 def analyze_climate_trends(min_lat, max_lat, min_lon, max_lon, start_year, end_year, directory=".", top_n=9):
     figures_dir = os.path.join(directory, "Figures_API")
     if os.path.exists(figures_dir):
@@ -128,7 +128,6 @@ def analyze_climate_trends(min_lat, max_lat, min_lon, max_lon, start_year, end_y
         else:
             conclusion = f"No statistically significant long-term changes were detected for {var}. Variations appear to be natural climate noise."
 
-# --- PHASE 3: VISUALIZATION AND REPORTING ---
         plt.figure(figsize=(10, 5))
         plt.plot(df['time'], df['Raw_Value'], label='Monthly Raw Data', color='lightgray', alpha=0.5)
         plt.plot(df['time'], df['Smoothed_Value'], label='12-Month Rolling Mean', color='blue', alpha=0.7)

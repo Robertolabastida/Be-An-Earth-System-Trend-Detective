@@ -21,9 +21,7 @@ plt.rcParams.update({
     "grid.alpha": 0.25,
 })
 
-# ==============================================================================
-# 0. PATHS, REGION, AND TIME PERIOD CONFIGURATION (ENSENADA, B.C.)
-# ==============================================================================
+
 data_folder = Path("./Precipitation_data/gpm_imergm_v07")
 exit_folder = Path("./Precipitation_data/gpm_ensenada_outputs")
 csv_folder = exit_folder / "csv"
@@ -61,9 +59,6 @@ precip_rate["time"] = pd.to_datetime([str(t) for t in precip_rate.time.values])
 precip_rate = precip_rate.sel(time=slice(time_range[0], time_range[1]))
 dates_dt = pd.to_datetime(precip_rate.time.values)
 
-# ==============================================================================
-# 1. COMPUTE THE 4 HYDROLOGICAL VARIABLES
-# ==============================================================================
 weights = np.cos(np.deg2rad(precip_rate.lat))
 
 # --- VARIABLE 1: ACCUMULATED PRECIPITATION (mm/month and mm/year) ---
@@ -143,9 +138,7 @@ anom_cusum = np.cumsum(accum_anom.values - np.mean(accum_anom.values))
 std_anom_z = (accum_anom.values - np.mean(accum_anom.values)) / np.std(accum_anom.values)
 extreme_event_threshold = float(np.percentile(accum_series.values, 90))
 
-# ==============================================================================
-# 2. STATISTICAL TESTS AND MULTIPLE-COMPARISON CORRECTIONS
-# ==============================================================================
+
 def evaluate_statistics(series: np.ndarray, anomalies: np.ndarray, name: str, unit: str) -> dict:
     n = len(series)
     t_years = np.arange(n) / 12.0
@@ -217,9 +210,7 @@ for p_col in ["OLS_p_value", "MK_p_value", "Seasonal_MK_p_value"]:
     df_stats[f"{p_col}_FDR"] = p_fdr
     df_stats[f"{p_col}_Bonferroni"] = p_bonf
 
-# ==============================================================================
-# 3. EXPORT DATASETS TO CSV
-# ==============================================================================
+
 t_years_vec = np.arange(len(dates_dt)) / 12.0
 
 # CSV 1A: Monthly accumulated precipitation
@@ -317,9 +308,7 @@ df_csv4.to_csv(csv_folder / "04_temporal_event_variation.csv", index=False)
 # CSV 5: Statistical tests summary
 df_stats.to_csv(csv_folder / "05_statistical_tests_summary.csv", index=False)
 
-# ==============================================================================
-# 4. GENERATE STATISTICAL PLOTS
-# ==============================================================================
+
 # --- PLOT 1: Accumulated Precipitation (Monthly Series + Trend + Annual Bar) ---
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 7.5))
 
@@ -434,9 +423,7 @@ plt.tight_layout()
 plt.savefig(plots_folder / "04_plot_temporal_variation_memory.png")
 plt.close()
 
-# ==============================================================================
-# 5. CONSOLE SUMMARY & AUTOMATED SCIENTIFIC CONCLUSION
-# ==============================================================================
+
 print("=========================================================================")
 print("CSV FILES AND PLOTS SUCCESSFULLY GENERATED AT:")
 print(f"  -> CSVs:  {csv_folder}")

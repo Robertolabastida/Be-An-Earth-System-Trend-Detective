@@ -6,6 +6,8 @@ Be An Earth System Trend Detective is an interactive 3D globe that helps anyone 
 
 Video demonstrations: https://drive.google.com/drive/folders/1Qo57TDtzWzsjyyVo1HgW0vD-qcWXPjV0?usp=sharing
 
+The application uses NASA POWER and NOAA OISST for environmental data retrieval, NASA GIBS and Esri for geographic visualization, and OpenStreetMap Nominatim for location searches. These services are accessed through public endpoints, although their availability and usage restrictions may vary. To reproduce the MODIS data extraction, users must replace the existing authentication token in Página web 2/modis_api.py with their own NASA AppEEARS access token, preferably stored in environment variables. The currently embedded token should be revoked and removed from the repository history before public release. GPM data extraction through Página web 2/Precipitation_data/extract_earthdata.py also requires personal NASA Earthdata Login credentials. Although the Temporal Convolutional Network (TCN) has been trained and its forecasting results are available for visualization, its complete integration into the interactive platform, including real-time inference for user-selected regions and periods, remains part of the project's future development.
+
 ## What the page does
 
 - **3D globe:** built with CesiumJS. The user can search for a place or click on the globe, and the selected country is highlighted.

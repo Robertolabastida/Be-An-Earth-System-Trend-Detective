@@ -20,11 +20,7 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True      # re-read gt.html on every visit
 CACHE, TTL = {}, 6 * 3600
 DEFAULT_START, DEFAULT_END = 2003, 2025         # default analysis period
 
-# ---------------------------------------------------------------------------
-# Local data folders (GPM precipitation, MERRA-2, GLDAS plots and CSV files).
-# By default they are looked up next to this file. Change the paths here, or set
-# the PRECIP_DIR / STATS_DIR environment variables, if your folders live elsewhere.
-# ---------------------------------------------------------------------------
+
 BASE = os.path.dirname(os.path.abspath(__file__))
 DATA_ROOTS = {
     "precip": os.environ.get("PRECIP_DIR", os.path.join(BASE, "Precipitation_data")),
@@ -94,9 +90,7 @@ def series():
     return jsonify({**payload, "notes": notes})
 
 
-# ---------------------------------------------------------------------------
-# Climate Atlas: charts for ANY selected place (NASA POWER, see region_data.py)
-# ---------------------------------------------------------------------------
+
 @app.route("/api/region")
 def region():
     try:
@@ -116,9 +110,7 @@ def region():
         return jsonify(error=str(e)), 502
 
 
-# ---------------------------------------------------------------------------
-# Local data: discovery, images, CSV series (kept available, no longer used by the panel)
-# ---------------------------------------------------------------------------
+
 SKIP_DIRS = {"__pycache__", ".git", "node_modules", "venv", ".venv"}
 IMG_EXT = (".png", ".jpg", ".jpeg")
 SOURCES = [

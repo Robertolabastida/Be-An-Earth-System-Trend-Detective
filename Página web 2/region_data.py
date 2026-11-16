@@ -22,9 +22,7 @@ class RegionError(Exception):
     pass
 
 
-# ---------------------------------------------------------------------------
-# Download
-# ---------------------------------------------------------------------------
+
 def _fetch(param, lat, lon, y0, y1):
     r = requests.get(POWER_URL, timeout=60, params={
         "parameters": param, "community": "AG", "latitude": round(lat, 4),
@@ -40,9 +38,7 @@ def _fetch(param, lat, lon, y0, y1):
     return np.array(t), np.array(v)
 
 
-# ---------------------------------------------------------------------------
-# Statistics
-# ---------------------------------------------------------------------------
+
 def _sen(x, y):
     i, j = np.triu_indices(len(x), 1)
     dx = x[j] - x[i]
@@ -83,9 +79,6 @@ def _seasonal_mk_p(v, mon):
     return _z_to_p(s_tot, var_tot)
 
 
-# ---------------------------------------------------------------------------
-# Climate Atlas (grouped charts)
-# ---------------------------------------------------------------------------
 GROUPS = [
     {"id": "water", "name": "Water Cycle",
      "note": "Rainfall, humidity and evapotranspiration at the selected place."},
@@ -171,9 +164,7 @@ def region_report(lat, lon, y0, y1):
     return payload
 
 
-# ---------------------------------------------------------------------------
-# Extra variables for the "Choose variables" list
-# ---------------------------------------------------------------------------
+
 def _extra(id_, power, name, unit, group, explain, meaning, limits, start=1981,
            source="NASA POWER / MERRA-2", dataset="MERRA-2 reanalysis via NASA POWER",
            resolution="0.5° × 0.625°, monthly",

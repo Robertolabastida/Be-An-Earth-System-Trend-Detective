@@ -4,6 +4,8 @@
 
 Be An Earth System Trend Detective is an interactive 3D globe that helps anyone explore how the climate of a place has changed over time. The user selects a country or a point on Earth, and the page shows trend charts for variables such as air temperature, precipitation, humidity, wind, evapotranspiration and soil moisture, together with simple statistical tests that indicate whether each change is real or just natural variability.
 
+Video demonstrations: https://drive.google.com/drive/folders/1Qo57TDtzWzsjyyVo1HgW0vD-qcWXPjV0?usp=sharing
+
 ## What the page does
 
 - **3D globe:** built with CesiumJS. The user can search for a place or click on the globe, and the selected country is highlighted.

@@ -32,9 +32,7 @@ def load_and_clean_nasa_csv(filepath):
     return df, var_name
 
 def analyze_climate_trends(directory=".", top_n=5):
-    # ==========================================
-    # PREPARATION: FIGURE FOLDER MANAGEMENT
-    # ==========================================
+
     figures_dir = os.path.join(directory, "Figures_API")
     if os.path.exists(figures_dir):
         for file in glob.glob(os.path.join(figures_dir, "*.*")):
@@ -46,9 +44,7 @@ def analyze_climate_trends(directory=".", top_n=5):
     if not csv_files:
         return {"error": f"No data files found in the directory: {directory}"}
     
-    # ==========================================
-    # PHASE 0: LOAD DATA & DERIVE VARIABLES
-    # ==========================================
+
     loaded_data = {} 
     
     for file in csv_files:
@@ -70,9 +66,7 @@ def analyze_climate_trends(directory=".", top_n=5):
         del loaded_data[u_key]
         del loaded_data[v_key]
         
-    # ==========================================
-    # PHASE 1: SCREENING
-    # ==========================================
+
     screening_results = []
     
     for var_name, df in loaded_data.items():
@@ -95,9 +89,7 @@ def analyze_climate_trends(directory=".", top_n=5):
         
     top_vars = sorted(screening_results, key=lambda x: x['change_pct'], reverse=True)[:top_n]
     
-    # ==========================================
-    # PHASE 2: RIGOROUS STATISTICAL ANALYSIS & PLOTTING
-    # ==========================================
+
     final_report = []
     
     for item in top_vars:
